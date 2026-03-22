@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasir Jaja</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #area-struk, #area-struk * { visibility: visible; }
+            #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; }
+            .print\:hidden { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800">
+
+    <div>
+        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-10 print:hidden flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">Web Kasir</h1>
+            <button onclick="bukaRekapan()" class="bg-slate-700 border border-slate-600 px-3 py-1 rounded-lg text-sm font-semibold active:bg-slate-600 shadow transition">
+                Catatan Penjualan
+            </button>
+        </div>
+
+        <div class="p-4 max-w-md mx-auto">
+            <input type="text" id="nama-pembeli" placeholder="Masukkan Nama Pelanggan..." 
+                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg print:hidden">
+
+            <div class="flex justify-between items-center mb-3 print:hidden">
+                <h2 class="text-slate-700 font-bold">Pilih Jaja:</h2>
+                <button onclick="tambahMenu()" class="text-sm bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow active:bg-amber-600 font-semibold transition">
+                    + Tambah Jaja
+                </button>
+            </div>
+            
+            <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden">
+                <div class="text-center text-slate-400 col-span-2">Memuat data...</div>
+            </div>
+
+            <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
+                <div class="text-center mb-4 hidden print:block">
+                    <h2 class="font-bold text-xl">GINA & ULI</h2>
+                    <h2 class="font-bold text-xl">made by Artani</h2>
+                    <p class="text-sm text-slate-700">WA: 081-338-532-865 / 081-337-007-289</p> 
+                    <p class="text-sm text-slate-500 mt-1" id="struk-tanggal"></p>
+                    <p class="text-sm text-slate-800 font-semibold" id="struk-nota"></p>
+                    <div class="border-b border-dashed border-slate-400 my-2"></div>
+                    <p class="text-left font-bold" id="struk-nama-pembeli"></p>
+                    <div class="border-b border-dashed border-slate-400 my-2"></div>
+                </div>
+
+                <h2 class="text-slate-800 font-bold mb-3 border-b pb-2 flex justify-between print:hidden"><span>Keranjang</span></h2>
+                <ul id="daftar-keranjang" class="mb-4 text-slate-600 space-y-2"><li class="text-sm italic text-center">Belum ada pesanan...</li></ul>
+                <div class="flex justify-between items-center font-bold text-xl border-t border-slate-300 pt-4 text-slate-800 print:text-black">
+                    <span>Total:</span><span id="total-harga" class="text-emerald-600 print:text-black">Rp 0</span>
+                </div>
+                
+                <div class="text-center mt-6 hidden print:block border-t border-dashed border-slate-400 pt-3">
+                    <p class="font-bold text-slate-800 text-lg">Terima Kasih!</p>
+                    <p class="text-sm text-slate-600">* Matur Suksma *</p>
+                    <p class="text-[10px] text-slate-400 mt-4 italic">Developed with ❤️ by starlight.dev</p>
+                </div>
+                
+                <button onclick="simpanTransaksi()" class="w-full bg-emerald-600 text-white font-bold text-lg p-3 rounded-xl mt-5 active:bg-emerald-700 shadow-md transition print:hidden">
+                    Simpan & Cetak Struk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center text-slate-400 text-xs mt-8 pb-4 print:hidden">
+        Web App Kasir by <span class="font-semibold text-slate-500">starlight.dev</span>
+    </div>
+
+    <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
+        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
+            <h2 class="font-bold text-lg text-slate-800 text-center mb-3">Konfirmasi Pesanan</h2>
+            <div class="text-sm text-slate-600 mb-2 border-b border-slate-200 pb-2">
+                Pelanggan: <span id="konfirm-nama" class="font-bold text-slate-800"></span>
+            </div>
+            <ul id="konfirm-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto text-sm"></ul>
+            <div class="flex justify-between items-center font-bold text-lg text-slate-800 border-t border-slate-200 pt-2 mb-5">
+                <span>Total:</span><span id="konfirm-total" class="text-emerald-600">Rp 0</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="tutupKonfirmasi()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
+                <button onclick="prosesSimpanFinal()" class="w-1/2 bg-emerald-600 text-white font-bold p-3 rounded-xl active:bg-emerald-700 transition">Ya, Simpan!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
+        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[80vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
+                <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
+                <button onclick="tutupRekapan()" class="text-rose-500 font-bold text-xl px-2">✖</button>
+            </div>
+            <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama pelanggan..." 
+                class="w-full p-2 mb-4 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+            <div class="overflow-y-auto flex-1">
+                <ul id="list-rekapan" class="space-y-2 text-sm"></ul>
+            </div>
+            <div id="area-total-rekapan" class="mt-4 font-bold text-lg text-right border-t border-slate-200 pt-3 text-slate-800">
+                Total Pemasukan: <br> <span class="text-emerald-600 text-2xl" id="total-semua-rekapan">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-detail" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
+        <div class="bg-white p-6 rounded-2xl w-10/12 max-w-sm shadow-2xl relative">
+            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 font-bold text-xl">✖</button>
+            <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
+            <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
+                <p id="detail-nota" class="font-semibold"></p>
+                <p id="detail-tgl"></p>
+                <p id="detail-nama" class="font-bold mt-1 text-slate-800"></p>
+            </div>
+            
+            <ul id="list-detail" class="space-y-3 mb-4 text-sm max-h-48 overflow-y-auto"></ul>
+            
+            <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800">
+                <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let keranjang = [];
+        let semuaTransaksi = [];
+
+        function muatMenu() {
+            fetch('/api/products').then(res => res.json()).then(res => {
+                const tempatJaja = document.getElementById('tempat-jaja');
+                tempatJaja.innerHTML = ''; 
+                res.data.forEach(jaja => {
+                    const wadah = document.createElement('div');
+                    wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
+                    
+                    wadah.innerHTML = `
+                        <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
+                                class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">
+                            ✖
+                        </button>
+                        <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
+                            <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
+                            <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
+                        </div>
+                    `;
+                    tempatJaja.appendChild(wadah);
+                });
+            });
+        }
+        muatMenu(); 
+
+        function tambahMenu() {
+            let nama = prompt("Masukkan nama Jaja / Barang baru:");
+            if (!nama) return;
+            let harga = prompt("Masukkan harganya (angka saja, misal: 15000):");
+            if (!harga || isNaN(harga)) { alert("Harga harus berupa angka!"); return; }
+            fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: nama, Harga: parseInt(harga) })
+            }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
+        }
+
+        function hapusMenuDariDatabase(id, nama) {
+            let konfirmasi = confirm(`Yakin ingin menghapus menu "${nama}"?`);
+            if (konfirmasi) {
+                fetch('/api/products/' + id, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => { alert(data.pesan); muatMenu(); })
+                .catch(err => alert("Gagal menghapus menu."));
+            }
+        }
+
+        function tambahKeKeranjang(id, nama, harga) {
+            let barangAda = keranjang.find(item => item.id === id);
+            if (barangAda) barangAda.qty += 1;
+            else keranjang.push({ id: id, nama: nama, harga: harga, qty: 1 });
+            renderKeranjang();
+        }
+
+        function hapusDariKeranjang(id) {
+            keranjang = keranjang.filter(item => item.id !== id);
+            renderKeranjang();
+        }
+
+        function renderKeranjang() {
+            const daftar = document.getElementById('daftar-keranjang');
+            const teksTotal = document.getElementById('total-harga');
+            daftar.innerHTML = ''; let total = 0;
+            if (keranjang.length === 0) { daftar.innerHTML = '<li class="text-sm italic text-center text-slate-400">Belum ada pesanan...</li>'; teksTotal.innerText = 'Rp 0'; return; }
+            
+            keranjang.forEach((item) => {
+                let subtotal = item.harga * item.qty;
+                total += subtotal;
+                daftar.innerHTML += `
+                    <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
+                        <div class="flex justify-between items-center w-full">
+                            <div><span class="font-semibold text-slate-800 print:text-black">${item.nama}</span><span class="text-sm text-slate-500 ml-2 print:hidden">x${item.qty}</span></div>
+                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">✖</button></div>
+                        </div>
+                        <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.qty} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
+                    </li>`;
+            });
+            teksTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        function simpanTransaksi() {
+            const nama = document.getElementById('nama-pembeli').value;
+            if (nama === "") { alert("Isi nama pelanggan!"); return; }
+            if (keranjang.length === 0) { alert("Keranjang kosong!"); return; }
+            
+            document.getElementById('modal-konfirmasi').classList.remove('hidden');
+            document.getElementById('konfirm-nama').innerText = nama;
+
+            let htmlKonfirm = '';
+            let totalHarga = 0;
+            keranjang.forEach(item => {
+                let subtotal = item.harga * item.qty;
+                totalHarga += subtotal;
+                htmlKonfirm += `<li class="flex justify-between border-b border-slate-100 pb-1">
+                    <span class="text-slate-700">${item.qty}x ${item.nama}</span>
+                    <span class="font-semibold text-slate-800">Rp ${subtotal.toLocaleString('id-ID')}</span>
+                </li>`;
+            });
+            document.getElementById('konfirm-list').innerHTML = htmlKonfirm;
+            document.getElementById('konfirm-total').innerText = `Rp ${totalHarga.toLocaleString('id-ID')}`;
+        }
+
+        function tutupKonfirmasi() {
+            document.getElementById('modal-konfirmasi').classList.add('hidden');
+        }
+
+        function prosesSimpanFinal() {
+            const nama = document.getElementById('nama-pembeli').value;
+            let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
+            
+            fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
+            }).then(res => res.json()).then(res => {
+                tutupKonfirmasi();
+
+                document.getElementById('struk-nota').innerText = "No. Nota: INV-" + res.id_nota;
+                document.getElementById('struk-tanggal').innerText = res.tanggal;
+                document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
+                
+                window.print(); 
+                
+                keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+            });
+        }
+
+        function bukaRekapan() {
+            document.getElementById('modal-rekapan').classList.remove('hidden');
+            document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat rekapan...</li>';
+            document.getElementById('input-cari').value = ''; 
+            fetch('/api/transactions').then(res => res.json()).then(res => { semuaTransaksi = res.data; tampilkanListRekapan(semuaTransaksi); });
+        }
+
+        function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
+
+        function filterRekapan() {
+            let kataKunci = document.getElementById('input-cari').value.toLowerCase();
+            let dataTerfilter = semuaTransaksi.filter(trx => trx.nama_pembeli.toLowerCase().includes(kataKunci));
+            tampilkanListRekapan(dataTerfilter); 
+        }
+
+        function tampilkanListRekapan(data) {
+            let html = ''; let totalSemua = 0;
+            if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Pencarian tidak ditemukan...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
+
+            data.forEach(trx => {
+                let tgl = trx.tanggal_transaksi.substring(0, 10);
+                html += `<li onclick="lihatDetail(${trx.id}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="border-b border-slate-100 pb-2 cursor-pointer hover:bg-slate-50 active:bg-slate-100 p-2 rounded-lg transition">
+                    <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-normal text-slate-400 ml-1">INV-${trx.id}</span></div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-slate-500">${tgl}</span>
+                        <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
+                    </div>
+                </li>`;
+                totalSemua += trx.total_belanja;
+            });
+            document.getElementById('list-rekapan').innerHTML = html;
+            document.getElementById('total-semua-rekapan').innerText = `Rp ${totalSemua.toLocaleString('id-ID')}`;
+        }
+
+        function lihatDetail(id, nama, tgl, total) {
+            document.getElementById('modal-detail').classList.remove('hidden');
+            document.getElementById('detail-nama').innerText = "Pelanggan: " + nama;
+            document.getElementById('detail-nota').innerText = "INV-" + id;
+            document.getElementById('detail-tgl').innerText = tgl;
+            document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
+            document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
+
+            fetch('/api/transactions/' + id + '/details')
+                .then(res => res.json())
+                .then(res => {
+                    let html = '';
+                    res.data.forEach(item => {
+                        html += `
+                        <li class="flex justify-between border-b border-dashed border-slate-200 pb-2">
+                            <div>
+                                <span class="font-semibold text-slate-800">${item.nama_jaja}</span>
+                                <div class="text-xs text-slate-500">${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</div>
+                            </div>
+                            <div class="font-semibold text-slate-700 mt-1">Rp ${item.subtotal.toLocaleString('id-ID')}</div>
+                        </li>`;
+                    });
+                    document.getElementById('list-detail').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>';
+                });
+        }
+
+        function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
+    </script>
+</body>
+</html>
