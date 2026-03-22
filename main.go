@@ -64,6 +64,8 @@ func main() {
 		log.Fatal("Gagal connect: ", err)
 	}
 
+	db.AutoMigrate(&Product{}, &Transaction{}, &TransactionDetail{})
+
 	r := gin.Default()
 
 	// 1. Ambil Menu (GET)
