@@ -10,6 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// SETTING ZONA WAKTU WITA (Karena kamu di WITA, kita pakai +8)
+var lokasiWita = time.FixedZone("WITA", 8*3600)
+
 type Product struct {
 	Id_Jaja   int    `gorm:"primaryKey;column:id_jaja" json:"Id_Jaja"`
 	Nama_Jaja string `gorm:"column:nama_jaja" json:"Nama_Jaja"`
@@ -22,7 +25,7 @@ type Transaction struct {
 	ID               int       `gorm:"primaryKey;column:id" json:"id"`
 	NamaPembeli      string    `gorm:"column:nama_pembeli" json:"nama_pembeli"`
 	TotalBelanja     int       `gorm:"column:total_belanja" json:"total_belanja"`
-	TanggalTransaksi time.Time `gorm:"column:tanggal_transaksi;autoCreateTime" json:"tanggal_transaksi"`
+	TanggalTransaksi time.Time `gorm:"column:tanggal_transaksi" json:"tanggal_transaksi"`
 }
 
 func (Transaction) TableName() string { return "transactions" }
@@ -57,19 +60,15 @@ var app *gin.Engine
 func init() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		// Default local untuk testing
 		dsn = "root:4125Des.@tcp(127.0.0.1:3306)/db_kasir_jaja?charset=utf8mb4&parseTime=True&loc=Local"
 	}
 
-	// Koneksi ke Database
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
 	r := gin.Default()
 
-	// Handler jika database tidak terkoneksi (Biar tidak nil pointer dereference)
 	r.Use(func(c *gin.Context) {
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database tidak terkoneksi. Cek DATABASE_URL di Vercel."})
+			c.JSON(500, gin.H{"error": "DB Error"})
 			c.Abort()
 			return
 		}
@@ -81,6 +80,7 @@ func init() {
 		db.AutoMigrate(&Product{}, &Transaction{}, &TransactionDetail{})
 	}
 
+	// GET PRODUCTS
 	r.GET("/api/products", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var products []Product
@@ -88,23 +88,17 @@ func init() {
 		c.JSON(200, gin.H{"data": products})
 	})
 
+	// POST PRODUCT
 	r.POST("/api/products", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var newProduct Product
-		if err := c.ShouldBindJSON(&newProduct); err != nil {
-			return
+		if err := c.ShouldBindJSON(&newProduct); err == nil {
+			database.Create(&newProduct)
+			c.JSON(200, gin.H{"pesan": "Sukses"})
 		}
-		database.Create(&newProduct)
-		c.JSON(200, gin.H{"pesan": "Menu baru berhasil ditambahkan!"})
 	})
 
-	r.DELETE("/api/products/:id", func(c *gin.Context) {
-		database := c.MustGet("db").(*gorm.DB)
-		id := c.Param("id")
-		database.Delete(&Product{}, "id_jaja = ?", id)
-		c.JSON(200, gin.H{"pesan": "Menu berhasil dihapus!"})
-	})
-
+	// POST TRANSACTION (DIPERBAIKI)
 	r.POST("/api/transactions", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var req RequestPesanan
@@ -112,31 +106,47 @@ func init() {
 			return
 		}
 
-		trx := Transaction{NamaPembeli: req.NamaPembeli, TotalBelanja: req.TotalHarga}
+		// Set waktu sekarang ke WITA
+		waktuSekarang := time.Now().In(lokasiWita)
+
+		trx := Transaction{
+			NamaPembeli:      req.NamaPembeli,
+			TotalBelanja:     req.TotalHarga,
+			TanggalTransaksi: waktuSekarang,
+		}
+
+		// Simpan transaksi utama dulu
 		database.Create(&trx)
 
+		// Simpan detail belanja
 		for _, item := range req.Keranjang {
-			database.Create(&TransactionDetail{TransactionID: trx.ID, ProductID: item.ID, Kuantitas: item.Qty})
+			detail := TransactionDetail{
+				TransactionID: trx.ID, // Pastikan ID ini dapet dari baris di atas
+				ProductID:     item.ID,
+				Kuantitas:     item.Qty,
+			}
+			database.Create(&detail)
 		}
-		c.JSON(200, gin.H{"pesan": "Sukses!", "id_nota": trx.ID, "tanggal": trx.TanggalTransaksi.Format("02 Jan 2006, 15:04")})
-	})
 
-	r.GET("/api/transactions", func(c *gin.Context) {
-		database := c.MustGet("db").(*gorm.DB)
-		var trxs []Transaction
-		database.Order("tanggal_transaksi desc").Find(&trxs)
-		c.JSON(200, gin.H{"data": trxs})
+		c.JSON(200, gin.H{
+			"pesan":   "Sukses!",
+			"id_nota": trx.ID,
+			"tanggal": trx.TanggalTransaksi.Format("02 Jan 2006, 15:04"),
+		})
 	})
 
 	r.GET("/api/transactions/:id/details", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
 		var details []DetailResponse
+
+		// Query JOIN untuk ngambil nama jaja dan harga
 		database.Table("transaction_details").
 			Select("products.nama_jaja, products.harga, transaction_details.kuantitas, (products.harga * transaction_details.kuantitas) as subtotal").
 			Joins("JOIN products ON products.id_jaja = transaction_details.product_id").
 			Where("transaction_details.transaction_id = ?", id).
 			Scan(&details)
+
 		c.JSON(200, gin.H{"data": details})
 	})
 
