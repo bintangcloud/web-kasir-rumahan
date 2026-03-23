@@ -175,7 +175,7 @@
             var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv");
+            link.setAttribute("download", "Rekapan_Kasir_Jaja.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -354,10 +354,10 @@
 
         // FITUR HAPUS TRANSAKSI DENGAN PIN
         function hapusTransaksi(id) {
-            let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
+            let inputPin = prompt("Masukkan PIN untuk menghapus nota ini:");
             
             if (inputPin === PIN_RAHASIA) {
-                if (confirm("Yakin mau hapus nota " + formatNota(id) + "? Data ini bakal hilang selamanya!")) {
+                if (confirm("Yakin ingin hapus nota " + formatNota(id) + "? Data ini akan hilang selamanya!")) {
                     fetch('/api/transactions/' + id, { method: 'DELETE' })
                     .then(res => res.json())
                     .then(data => {
