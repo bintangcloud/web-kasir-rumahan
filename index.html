@@ -14,7 +14,16 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative">
+
+    <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Kasir Ibuk</h2>
+            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN Rahasia</p>
+            <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
+            <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
+        </div>
+    </div>
 
     <div>
         <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-10 print:hidden flex justify-between items-center">
@@ -36,8 +45,7 @@
             </div>
             
             <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden">
-                <div class="text-center text-slate-400 col-span-2">Memuat data...</div>
-            </div>
+                </div>
 
             <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
                 <div class="text-center mb-4 hidden print:block">
@@ -95,8 +103,14 @@
         <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[80vh] flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
                 <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
-                <button onclick="tutupRekapan()" class="text-rose-500 font-bold text-xl px-2">✖</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportKeExcel()" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-green-700 shadow flex items-center gap-1 transition">
+                        📥 Excel
+                    </button>
+                    <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
+                </div>
             </div>
+
             <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama pelanggan..." 
                 class="w-full p-2 mb-4 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
             <div class="overflow-y-auto flex-1">
@@ -110,7 +124,7 @@
 
     <div id="modal-detail" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
         <div class="bg-white p-6 rounded-2xl w-10/12 max-w-sm shadow-2xl relative">
-            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 font-bold text-xl">✖</button>
+            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">✖</button>
             <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
             <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
                 <p id="detail-nota" class="font-semibold"></p>
@@ -130,7 +144,48 @@
         let keranjang = [];
         let semuaTransaksi = [];
 
-        // FUNGSI BARU BUAT NAMPILIN MENU KE LAYAR BIAR RAPI
+        // --- FITUR LOGIN PIN ---
+        function cekPin() {
+            const pin = document.getElementById('input-pin').value;
+            // GANTI ANGKA "1234" DI BAWAH INI DENGAN PIN YANG KAMU MAU
+            if(pin === "1234") { 
+                document.getElementById('layar-login').classList.add('hidden');
+                muatMenu(); // Panggil data dari satelit HANYA JIKA PIN BENAR
+            } else {
+                alert("PIN Salah! Hayo mau ngapain? 🤨");
+                document.getElementById('input-pin').value = '';
+            }
+        }
+
+        // --- FITUR EXPORT EXCEL (CSV) ---
+        function exportKeExcel() {
+            if (semuaTransaksi.length === 0) {
+                alert("Belum ada data penjualan hari ini!");
+                return;
+            }
+            
+            // Siapkan format Excel (CSV)
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n"; // Header Kolom
+
+            // Masukkan data baris per baris
+            semuaTransaksi.forEach(function(trx) {
+                let tgl = trx.tanggal_transaksi.substring(0, 10);
+                // Menambahkan tanda kutip pada nama pelanggan untuk mencegah error jika ada koma di namanya
+                let row = `INV-${trx.id},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
+                csvContent += row + "\n";
+            });
+
+            // Eksekusi Download
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv"); // Nama File
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function renderKeLayar(data) {
             const tempatJaja = document.getElementById('tempat-jaja');
             tempatJaja.innerHTML = ''; 
@@ -151,27 +206,21 @@
             });
         }
 
-        // FUNGSI LOAD DATA YG SUDAH DITAMBAHIN CACHE (MEMORI HP)
         async function muatMenu() {
             const tempatJaja = document.getElementById('tempat-jaja');
-            
-            // 1. Cek apakah ada data di memori HP
             const cacheData = localStorage.getItem('cache_jaja_ibuk');
             if (cacheData) {
-                renderKeLayar(JSON.parse(cacheData)); // Langsung muncul!
+                renderKeLayar(JSON.parse(cacheData)); 
             } else {
                 tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>';
             }
 
-            // 2. Ambil data terbaru dari Cloud (Vercel/TiDB)
             try {
                 const res = await fetch('/api/products');
                 const result = await res.json();
                 
                 if (result.data) {
-                    // Simpan data terbaru ke memori HP buat dipakai nanti
                     localStorage.setItem('cache_jaja_ibuk', JSON.stringify(result.data));
-                    // Update layar dengan harga/menu terbaru
                     renderKeLayar(result.data);
                 }
             } catch (err) {
@@ -182,7 +231,7 @@
             }
         }
         
-        muatMenu(); 
+        // PANGGILAN muatMenu() DIHAPUS DARI SINI BIAR GAK JALAN OTOMATIS SEBELUM LOGIN
 
         function tambahMenu() {
             let nama = prompt("Masukkan nama Jaja / Barang baru:");
