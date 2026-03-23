@@ -136,18 +136,22 @@
             
             <ul id="list-detail" class="space-y-3 mb-4 text-sm max-h-48 overflow-y-auto"></ul>
             
-            <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800">
+            <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800 mb-5">
                 <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
             </div>
+            
+            <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
+                🖨️ Cetak Ulang Nota
+            </button>
         </div>
     </div>
 
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
+        let detailTrxSaatIni = null; // Menyimpan memori struk yang lagi dibuka
         const PIN_RAHASIA = "2222"; 
 
-        // FORMAT: Pasti jadi INV-0001, INV-0002
         function formatNota(num) {
             return "INV-" + String(num).padStart(4, '0');
         }
@@ -287,7 +291,6 @@
 
         function tutupKonfirmasi() { document.getElementById('modal-konfirmasi').classList.add('hidden'); }
 
-        // MENGHITUNG OTOMATIS BERDASARKAN TOTAL DATA
         function prosesSimpanFinal() {
             const nama = document.getElementById('nama-pembeli').value;
             let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
@@ -295,9 +298,8 @@
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
                 
-                // Ambil ulang semua data dari server untuk ngitung jumlahnya
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
-                    let totalTransaksi = rData.data.length; // Ini pasti urut 1, 2, 3
+                    let totalTransaksi = rData.data.length; 
 
                     tutupKonfirmasi();
                     document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(totalTransaksi);
@@ -317,24 +319,20 @@
             document.getElementById('input-tanggal').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
-                // Urutkan dari yg lama ke baru (berdasarkan ID TiDB) buat ngasih nomor urut
                 let dataUrut = res.data.sort((a, b) => a.id - b.id);
-                
                 semuaTransaksi = dataUrut.map((trx, index) => {
-                    trx.nomor_urut = index + 1; // Paksa nomor dari 1, 2, 3
+                    trx.nomor_urut = index + 1; 
                     return trx;
-                }).reverse(); // Dibalik biar nota terbaru ada di paling atas layar
-                
+                }).reverse(); 
                 tampilkanListRekapan(semuaTransaksi); 
             });
         }
 
         function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
 
-        // FITUR FILTER NAMA & TANGGAL
         function filterRekapan() {
             let kataKunci = document.getElementById('input-cari').value.toLowerCase();
-            let filterTgl = document.getElementById('input-tanggal').value; // format YYYY-MM-DD
+            let filterTgl = document.getElementById('input-tanggal').value; 
             
             let dataTerfilter = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
@@ -351,11 +349,15 @@
 
             data.forEach(trx => {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
+                // Jamnya juga kita tampilin aja sekalian formatnya
+                let jamMenit = trx.tanggal_transaksi.substring(11, 16);
+                let tglStruk = trx.tanggal_transaksi.substring(0, 16).replace('T', ', ');
+
                 html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
-                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
+                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tglStruk}', ${trx.total_belanja})" class="cursor-pointer flex-1">
                         <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.nomor_urut)}</span></div>
                         <div class="flex justify-between items-center mt-1 pr-3">
-                            <span class="text-xs text-slate-500">${tgl}</span>
+                            <span class="text-xs text-slate-500">${tgl} ${jamMenit}</span>
                             <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
@@ -369,22 +371,15 @@
             document.getElementById('total-semua-rekapan').innerText = `Rp ${totalSemua.toLocaleString('id-ID')}`;
         }
 
-        // FITUR HAPUS TRANSAKSI DENGAN PIN
         function hapusTransaksi(id, nomor_urut) {
             let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
-            
             if (inputPin === PIN_RAHASIA) {
                 if (confirm("Yakin mau hapus nota " + formatNota(nomor_urut) + "? Data ini bakal hilang selamanya!")) {
                     fetch('/api/transactions/' + id, { method: 'DELETE' })
                     .then(res => res.json())
-                    .then(data => {
-                        alert(data.pesan);
-                        bukaRekapan(); // Refresh data dari server
-                    });
+                    .then(data => { alert(data.pesan); bukaRekapan(); });
                 }
-            } else if (inputPin !== null) {
-                alert("PIN Salah! Gagal menghapus nota.");
-            }
+            } else if (inputPin !== null) { alert("PIN Salah! Gagal menghapus nota."); }
         }
 
         function lihatDetail(id, nomor_urut, nama, tgl, total) {
@@ -395,9 +390,14 @@
             document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
             document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
 
+            // Simpan ke memori buat dicetak ulang nanti
+            detailTrxSaatIni = { id: id, nomor_urut: nomor_urut, nama: nama, tgl: tgl, total: total, items: [] };
+
             fetch('/api/transactions/' + id + '/details')
                 .then(res => res.json())
                 .then(res => {
+                    detailTrxSaatIni.items = res.data; // Simpan rincian belanjanya
+
                     let html = '';
                     res.data.forEach(item => {
                         html += `
@@ -409,6 +409,36 @@
                     document.getElementById('list-detail').innerHTML = html;
                 })
                 .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
+        }
+
+        // FITUR PAMUNGKAS: CETAK ULANG NOTA MASA LALU
+        function cetakUlangStruk() {
+            if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
+
+            // Ganti kepala struk pakai data masa lalu
+            document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(detailTrxSaatIni.nomor_urut);
+            document.getElementById('struk-tanggal').innerText = detailTrxSaatIni.tgl + " (Cetak Ulang)";
+            document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + detailTrxSaatIni.nama;
+
+            // Suntikkan rincian masa lalu ke layar struk utama
+            const daftar = document.getElementById('daftar-keranjang');
+            daftar.innerHTML = ''; 
+            detailTrxSaatIni.items.forEach((item) => {
+                daftar.innerHTML += `
+                    <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
+                        <div class="hidden print:flex justify-between items-center w-full">
+                            <div><span class="font-semibold text-black">${item.nama_jaja}</span></div>
+                        </div>
+                        <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${item.subtotal.toLocaleString('id-ID')}</span></div>
+                    </li>`;
+            });
+            document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
+
+            // Panggil printer!
+            window.print();
+
+            // Balikin layar ke mode keranjang jualan saat ini biar gak keder
+            renderKeranjang();
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
