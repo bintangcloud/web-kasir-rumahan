@@ -147,12 +147,9 @@
         let semuaTransaksi = [];
         const PIN_RAHASIA = "2222"; 
 
-        // Format Nomor Nota
-        function formatNota(id) {
-            if (id < 10000) {
-                return "INV-" + String(id).padStart(4, '0');
-            }
-            return "INV-" + id;
+        // FORMAT FIX: Murni tambahin 0 di depan angka
+        function formatNota(num) {
+            return "INV-" + String(num).padStart(4, '0');
         }
 
         function cekPin() {
@@ -172,13 +169,14 @@
             csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n";
             semuaTransaksi.forEach(function(trx) {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
-                let row = `${formatNota(trx.id)},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
+                // Pakai nomor urut buatan kita
+                let row = `${formatNota(trx.nomor_urut)},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
                 csvContent += row + "\n";
             });
             var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Rekapan_Kasir_Jaja.csv");
+            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -296,14 +294,19 @@
             
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
-                tutupKonfirmasi();
-
-                document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota);
-                document.getElementById('struk-tanggal').innerText = res.tanggal;
-                document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                 
-                window.print(); 
-                keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+                // JURUS ILUSI: Tarik jumlah data sebentar biar nomernya urut murni
+                fetch('/api/transactions').then(r => r.json()).then(rData => {
+                    let nomorMurni = rData.data.length; // Jumlah transaksi = Nomer Nota 
+
+                    tutupKonfirmasi();
+                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(nomorMurni);
+                    document.getElementById('struk-tanggal').innerText = res.tanggal;
+                    document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
+                    
+                    window.print(); 
+                    keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+                });
             });
         }
 
@@ -312,7 +315,16 @@
             document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat rekapan...</li>';
             document.getElementById('input-cari').value = ''; 
             document.getElementById('input-tanggal').value = ''; 
-            fetch('/api/transactions').then(res => res.json()).then(res => { semuaTransaksi = res.data; tampilkanListRekapan(semuaTransaksi); });
+            
+            fetch('/api/transactions').then(res => res.json()).then(res => { 
+                let totalData = res.data.length;
+                // JURUS ILUSI: Bikin nomor urut sendiri dari 1 sampai habis
+                semuaTransaksi = res.data.map((trx, index) => {
+                    trx.nomor_urut = totalData - index; // Data paling atas dapet nomor paling gede
+                    return trx;
+                });
+                tampilkanListRekapan(semuaTransaksi); 
+            });
         }
 
         function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
@@ -337,15 +349,16 @@
 
             data.forEach(trx => {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
+                // Pakai trx.nomor_urut buat ditampilin di layar!
                 html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
-                    <div onclick="lihatDetail(${trx.id}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
-                        <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.id)}</span></div>
+                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
+                        <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.nomor_urut)}</span></div>
                         <div class="flex justify-between items-center mt-1 pr-3">
                             <span class="text-xs text-slate-500">${tgl}</span>
                             <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
-                    <button onclick="hapusTransaksi(${trx.id})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">
+                    <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">
                         ✖
                     </button>
                 </li>`;
@@ -356,11 +369,11 @@
         }
 
         // FITUR HAPUS TRANSAKSI DENGAN PIN
-        function hapusTransaksi(id) {
-            let inputPin = prompt("Masukkan PIN untuk menghapus nota ini:");
+        function hapusTransaksi(id, nomor_urut) {
+            let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
             
             if (inputPin === PIN_RAHASIA) {
-                if (confirm("Yakin ingin hapus nota " + formatNota(id) + "? Data ini akan hilang selamanya!")) {
+                if (confirm("Yakin mau hapus nota " + formatNota(nomor_urut) + "? Data ini bakal hilang selamanya!")) {
                     fetch('/api/transactions/' + id, { method: 'DELETE' })
                     .then(res => res.json())
                     .then(data => {
@@ -373,10 +386,11 @@
             }
         }
 
-        function lihatDetail(id, nama, tgl, total) {
+        function lihatDetail(id, nomor_urut, nama, tgl, total) {
             document.getElementById('modal-detail').classList.remove('hidden');
             document.getElementById('detail-nama').innerText = "Pelanggan: " + nama;
-            document.getElementById('detail-nota').innerText = formatNota(id);
+            // Tampilkan nomor urut palsu kita
+            document.getElementById('detail-nota').innerText = formatNota(nomor_urut);
             document.getElementById('detail-tgl').innerText = tgl;
             document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
             document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
