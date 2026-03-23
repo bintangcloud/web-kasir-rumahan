@@ -18,7 +18,7 @@
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
-            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Kasir Jaja</h2>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
             <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
             <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
             <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
@@ -141,7 +141,7 @@
             </div>
             
             <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Ulang Nota
+                Cetak Ulang Nota
             </button>
         </div>
     </div>
@@ -426,9 +426,7 @@
                 .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
-        // ==========================================
-        // FITUR CETAK ULANG YANG UDAH DI-BRUTAL-IN!
-        // ==========================================
+        // FITUR CETAK ULANG 
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
 
@@ -439,7 +437,7 @@
             const daftar = document.getElementById('daftar-keranjang');
             daftar.innerHTML = ''; 
             
-            // Layout ini didesain MURNI buat diprint, gak peduli Tailwind telat atau nggak!
+            // Layout ini buat diprint
             detailTrxSaatIni.items.forEach((item) => {
                 daftar.innerHTML += `
                     <li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
