@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// SETTING ZONA WAKTU WITA (Karena kamu di WITA, kita pakai +8)
 var lokasiWita = time.FixedZone("WITA", 8*3600)
 
 type Product struct {
@@ -80,7 +79,6 @@ func init() {
 		db.AutoMigrate(&Product{}, &Transaction{}, &TransactionDetail{})
 	}
 
-	// GET PRODUCTS
 	r.GET("/api/products", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var products []Product
@@ -88,7 +86,6 @@ func init() {
 		c.JSON(200, gin.H{"data": products})
 	})
 
-	// POST PRODUCT
 	r.POST("/api/products", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var newProduct Product
@@ -98,7 +95,13 @@ func init() {
 		}
 	})
 
-	// POST TRANSACTION (DIPERBAIKI)
+	r.DELETE("/api/products/:id", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		id := c.Param("id")
+		database.Delete(&Product{}, "id_jaja = ?", id)
+		c.JSON(200, gin.H{"pesan": "Menu berhasil dihapus!"})
+	})
+
 	r.POST("/api/transactions", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var req RequestPesanan
@@ -106,36 +109,16 @@ func init() {
 			return
 		}
 
-		// Set waktu sekarang ke WITA
 		waktuSekarang := time.Now().In(lokasiWita)
-
-		trx := Transaction{
-			NamaPembeli:      req.NamaPembeli,
-			TotalBelanja:     req.TotalHarga,
-			TanggalTransaksi: waktuSekarang,
-		}
-
-		// Simpan transaksi utama dulu
+		trx := Transaction{NamaPembeli: req.NamaPembeli, TotalBelanja: req.TotalHarga, TanggalTransaksi: waktuSekarang}
 		database.Create(&trx)
 
-		// Simpan detail belanja
 		for _, item := range req.Keranjang {
-			detail := TransactionDetail{
-				TransactionID: trx.ID,
-				ProductID:     item.ID,
-				Kuantitas:     item.Qty,
-			}
-			database.Create(&detail)
+			database.Create(&TransactionDetail{TransactionID: trx.ID, ProductID: item.ID, Kuantitas: item.Qty})
 		}
-
-		c.JSON(200, gin.H{
-			"pesan":   "Sukses!",
-			"id_nota": trx.ID,
-			"tanggal": trx.TanggalTransaksi.Format("02 Jan 2006, 15:04"),
-		})
+		c.JSON(200, gin.H{"pesan": "Sukses!", "id_nota": trx.ID, "tanggal": trx.TanggalTransaksi.Format("02 Jan 2006, 15:04")})
 	})
 
-	// INI DIA YANG HILANG: GET TRANSACTIONS (UNTUK REKAPAN)
 	r.GET("/api/transactions", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var trxs []Transaction
@@ -143,20 +126,25 @@ func init() {
 		c.JSON(200, gin.H{"data": trxs})
 	})
 
-	// GET DETAILS
 	r.GET("/api/transactions/:id/details", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
 		var details []DetailResponse
-
-		// Query JOIN untuk ngambil nama jaja dan harga
 		database.Table("transaction_details").
 			Select("products.nama_jaja, products.harga, transaction_details.kuantitas, (products.harga * transaction_details.kuantitas) as subtotal").
 			Joins("JOIN products ON products.id_jaja = transaction_details.product_id").
 			Where("transaction_details.transaction_id = ?", id).
 			Scan(&details)
-
 		c.JSON(200, gin.H{"data": details})
+	})
+
+	// FITUR HAPUS TRANSAKSI BERSERTA DETAILNYA
+	r.DELETE("/api/transactions/:id", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		id := c.Param("id")
+		database.Where("transaction_id = ?", id).Delete(&TransactionDetail{})
+		database.Delete(&Transaction{}, id)
+		c.JSON(200, gin.H{"pesan": "Nota berhasil dihapus!"})
 	})
 
 	app = r

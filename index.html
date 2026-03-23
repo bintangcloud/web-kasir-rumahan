@@ -18,7 +18,7 @@
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
-            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Kasir Jaja</h2>
             <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
             <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
             <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
@@ -44,8 +44,7 @@
                 </button>
             </div>
             
-            <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden">
-                </div>
+            <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden"></div>
 
             <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
                 <div class="text-center mb-4 hidden print:block">
@@ -53,7 +52,7 @@
                     <h2 class="font-bold text-xl">made by Artani</h2>
                     <p class="text-sm text-slate-700">WA: 081-338-532-865 / 081-337-007-289</p> 
                     <p class="text-sm text-slate-500 mt-1" id="struk-tanggal"></p>
-                    <p class="text-sm text-slate-800 font-semibold" id="struk-nota"></p>
+                    <p class="text-sm text-slate-800 font-semibold text-lg" id="struk-nota"></p>
                     <div class="border-b border-dashed border-slate-400 my-2"></div>
                     <p class="text-left font-bold" id="struk-nama-pembeli"></p>
                     <div class="border-b border-dashed border-slate-400 my-2"></div>
@@ -111,8 +110,11 @@
                 </div>
             </div>
 
-            <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama pelanggan..." 
-                class="w-full p-2 mb-4 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+                <input type="date" id="input-tanggal" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+            </div>
+
             <div class="overflow-y-auto flex-1">
                 <ul id="list-rekapan" class="space-y-2 text-sm"></ul>
             </div>
@@ -127,7 +129,7 @@
             <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">✖</button>
             <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
             <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
-                <p id="detail-nota" class="font-semibold"></p>
+                <p id="detail-nota" class="font-bold text-lg text-slate-800"></p>
                 <p id="detail-tgl"></p>
                 <p id="detail-nama" class="font-bold mt-1 text-slate-800"></p>
             </div>
@@ -143,43 +145,37 @@
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
+        const PIN_RAHASIA = "2222"; 
 
-        // --- FITUR LOGIN PIN ---
+        // FORMAT ID JADI INV-0001
+        function formatNota(id) {
+            return "INV-" + String(id).padStart(4, '0');
+        }
+
         function cekPin() {
             const pin = document.getElementById('input-pin').value;
-            if(pin === "2222") { 
+            if(pin === PIN_RAHASIA) { 
                 document.getElementById('layar-login').classList.add('hidden');
-                muatMenu(); // Panggil data dari satelit HANYA JIKA PIN BENAR
+                muatMenu(); 
             } else {
                 alert("PIN Salah!");
                 document.getElementById('input-pin').value = '';
             }
         }
 
-        // --- FITUR EXPORT EXCEL (CSV) ---
         function exportKeExcel() {
-            if (semuaTransaksi.length === 0) {
-                alert("Belum ada data penjualan hari ini!");
-                return;
-            }
-            
-            // Siapkan format Excel (CSV)
+            if (semuaTransaksi.length === 0) { alert("Belum ada data penjualan!"); return; }
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n"; // Header Kolom
-
-            // Masukkan data baris per baris
+            csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n";
             semuaTransaksi.forEach(function(trx) {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
-                // Menambahkan tanda kutip pada nama pelanggan untuk mencegah error jika ada koma di namanya
-                let row = `INV-${trx.id},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
+                let row = `${formatNota(trx.id)},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
                 csvContent += row + "\n";
             });
-
-            // Eksekusi Download
             var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv"); // Nama File
+            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -193,14 +189,11 @@
                 wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
                 wadah.innerHTML = `
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">
-                        ✖
-                    </button>
+                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">✖</button>
                     <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
                         <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
                         <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
-                    </div>
-                `;
+                    </div>`;
                 tempatJaja.appendChild(wadah);
             });
         }
@@ -208,29 +201,21 @@
         async function muatMenu() {
             const tempatJaja = document.getElementById('tempat-jaja');
             const cacheData = localStorage.getItem('cache_jaja_ibuk');
-            if (cacheData) {
-                renderKeLayar(JSON.parse(cacheData)); 
-            } else {
-                tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>';
-            }
+            if (cacheData) { renderKeLayar(JSON.parse(cacheData)); } 
+            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>'; }
 
             try {
                 const res = await fetch('/api/products');
                 const result = await res.json();
-                
                 if (result.data) {
                     localStorage.setItem('cache_jaja_ibuk', JSON.stringify(result.data));
                     renderKeLayar(result.data);
                 }
             } catch (err) {
                 console.error("Gagal ambil data:", err);
-                if (!cacheData) {
-                    tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-2">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>';
-                }
+                if (!cacheData) { tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-2">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>'; }
             }
         }
-        
-        // PANGGILAN muatMenu() DIHAPUS DARI SINI BIAR GAK JALAN OTOMATIS SEBELUM LOGIN
 
         function tambahMenu() {
             let nama = prompt("Masukkan nama Jaja / Barang baru:");
@@ -244,10 +229,7 @@
         function hapusMenuDariDatabase(id, nama) {
             let konfirmasi = confirm(`Yakin ingin menghapus menu "${nama}"?`);
             if (konfirmasi) {
-                fetch('/api/products/' + id, { method: 'DELETE' })
-                .then(res => res.json())
-                .then(data => { alert(data.pesan); muatMenu(); })
-                .catch(err => alert("Gagal menghapus menu."));
+                fetch('/api/products/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); })
             }
         }
 
@@ -297,18 +279,13 @@
             keranjang.forEach(item => {
                 let subtotal = item.harga * item.qty;
                 totalHarga += subtotal;
-                htmlKonfirm += `<li class="flex justify-between border-b border-slate-100 pb-1">
-                    <span class="text-slate-700">${item.qty}x ${item.nama}</span>
-                    <span class="font-semibold text-slate-800">Rp ${subtotal.toLocaleString('id-ID')}</span>
-                </li>`;
+                htmlKonfirm += `<li class="flex justify-between border-b border-slate-100 pb-1"><span class="text-slate-700">${item.qty}x ${item.nama}</span><span class="font-semibold text-slate-800">Rp ${subtotal.toLocaleString('id-ID')}</span></li>`;
             });
             document.getElementById('konfirm-list').innerHTML = htmlKonfirm;
             document.getElementById('konfirm-total').innerText = `Rp ${totalHarga.toLocaleString('id-ID')}`;
         }
 
-        function tutupKonfirmasi() {
-            document.getElementById('modal-konfirmasi').classList.add('hidden');
-        }
+        function tutupKonfirmasi() { document.getElementById('modal-konfirmasi').classList.add('hidden'); }
 
         function prosesSimpanFinal() {
             const nama = document.getElementById('nama-pembeli').value;
@@ -318,12 +295,11 @@
             }).then(res => res.json()).then(res => {
                 tutupKonfirmasi();
 
-                document.getElementById('struk-nota').innerText = "No. Nota: INV-" + res.id_nota;
+                document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota);
                 document.getElementById('struk-tanggal').innerText = res.tanggal;
                 document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                 
                 window.print(); 
-                
                 keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
             });
         }
@@ -332,29 +308,43 @@
             document.getElementById('modal-rekapan').classList.remove('hidden');
             document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat rekapan...</li>';
             document.getElementById('input-cari').value = ''; 
+            document.getElementById('input-tanggal').value = ''; 
             fetch('/api/transactions').then(res => res.json()).then(res => { semuaTransaksi = res.data; tampilkanListRekapan(semuaTransaksi); });
         }
 
         function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
 
+        // FITUR FILTER NAMA & TANGGAL
         function filterRekapan() {
             let kataKunci = document.getElementById('input-cari').value.toLowerCase();
-            let dataTerfilter = semuaTransaksi.filter(trx => trx.nama_pembeli.toLowerCase().includes(kataKunci));
+            let filterTgl = document.getElementById('input-tanggal').value; // format YYYY-MM-DD
+            
+            let dataTerfilter = semuaTransaksi.filter(trx => {
+                let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
+                let tglTrx = trx.tanggal_transaksi.substring(0, 10);
+                let matchTgl = filterTgl ? (tglTrx === filterTgl) : true;
+                return matchNama && matchTgl;
+            });
             tampilkanListRekapan(dataTerfilter); 
         }
 
         function tampilkanListRekapan(data) {
             let html = ''; let totalSemua = 0;
-            if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Pencarian tidak ditemukan...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
+            if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Tidak ada penjualan di tanggal ini...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
 
             data.forEach(trx => {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
-                html += `<li onclick="lihatDetail(${trx.id}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="border-b border-slate-100 pb-2 cursor-pointer hover:bg-slate-50 active:bg-slate-100 p-2 rounded-lg transition">
-                    <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-normal text-slate-400 ml-1">INV-${trx.id}</span></div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-xs text-slate-500">${tgl}</span>
-                        <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
+                html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
+                    <div onclick="lihatDetail(${trx.id}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
+                        <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.id)}</span></div>
+                        <div class="flex justify-between items-center mt-1 pr-3">
+                            <span class="text-xs text-slate-500">${tgl}</span>
+                            <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
+                        </div>
                     </div>
+                    <button onclick="hapusTransaksi(${trx.id})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">
+                        ✖
+                    </button>
                 </li>`;
                 totalSemua += trx.total_belanja;
             });
@@ -362,10 +352,28 @@
             document.getElementById('total-semua-rekapan').innerText = `Rp ${totalSemua.toLocaleString('id-ID')}`;
         }
 
+        // FITUR HAPUS TRANSAKSI DENGAN PIN
+        function hapusTransaksi(id) {
+            let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
+            
+            if (inputPin === PIN_RAHASIA) {
+                if (confirm("Yakin mau hapus nota " + formatNota(id) + "? Data ini bakal hilang selamanya!")) {
+                    fetch('/api/transactions/' + id, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert(data.pesan);
+                        bukaRekapan(); // Refresh data dari server
+                    });
+                }
+            } else if (inputPin !== null) {
+                alert("PIN Salah! Gagal menghapus nota.");
+            }
+        }
+
         function lihatDetail(id, nama, tgl, total) {
             document.getElementById('modal-detail').classList.remove('hidden');
             document.getElementById('detail-nama').innerText = "Pelanggan: " + nama;
-            document.getElementById('detail-nota').innerText = "INV-" + id;
+            document.getElementById('detail-nota').innerText = formatNota(id);
             document.getElementById('detail-tgl').innerText = tgl;
             document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
             document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
@@ -377,18 +385,13 @@
                     res.data.forEach(item => {
                         html += `
                         <li class="flex justify-between border-b border-dashed border-slate-200 pb-2">
-                            <div>
-                                <span class="font-semibold text-slate-800">${item.nama_jaja}</span>
-                                <div class="text-xs text-slate-500">${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</div>
-                            </div>
+                            <div><span class="font-semibold text-slate-800">${item.nama_jaja}</span><div class="text-xs text-slate-500">${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</div></div>
                             <div class="font-semibold text-slate-700 mt-1">Rp ${item.subtotal.toLocaleString('id-ID')}</div>
                         </li>`;
                     });
                     document.getElementById('list-detail').innerHTML = html;
                 })
-                .catch(err => {
-                    document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>';
-                });
+                .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
