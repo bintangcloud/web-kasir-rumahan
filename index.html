@@ -130,28 +130,58 @@
         let keranjang = [];
         let semuaTransaksi = [];
 
-        function muatMenu() {
-            fetch('/api/products').then(res => res.json()).then(res => {
-                const tempatJaja = document.getElementById('tempat-jaja');
-                tempatJaja.innerHTML = ''; 
-                res.data.forEach(jaja => {
-                    const wadah = document.createElement('div');
-                    wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
-                    
-                    wadah.innerHTML = `
-                        <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                                class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">
-                            ✖
-                        </button>
-                        <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
-                            <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
-                            <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
-                        </div>
-                    `;
-                    tempatJaja.appendChild(wadah);
-                });
+        // FUNGSI BARU BUAT NAMPILIN MENU KE LAYAR BIAR RAPI
+        function renderKeLayar(data) {
+            const tempatJaja = document.getElementById('tempat-jaja');
+            tempatJaja.innerHTML = ''; 
+            data.forEach(jaja => {
+                const wadah = document.createElement('div');
+                wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
+                wadah.innerHTML = `
+                    <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
+                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">
+                        ✖
+                    </button>
+                    <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
+                        <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
+                        <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
+                    </div>
+                `;
+                tempatJaja.appendChild(wadah);
             });
         }
+
+        // FUNGSI LOAD DATA YG SUDAH DITAMBAHIN CACHE (MEMORI HP)
+        async function muatMenu() {
+            const tempatJaja = document.getElementById('tempat-jaja');
+            
+            // 1. Cek apakah ada data di memori HP
+            const cacheData = localStorage.getItem('cache_jaja_ibuk');
+            if (cacheData) {
+                renderKeLayar(JSON.parse(cacheData)); // Langsung muncul!
+            } else {
+                tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>';
+            }
+
+            // 2. Ambil data terbaru dari Cloud (Vercel/TiDB)
+            try {
+                const res = await fetch('/api/products');
+                const result = await res.json();
+                
+                if (result.data) {
+                    // Simpan data terbaru ke memori HP buat dipakai nanti
+                    localStorage.setItem('cache_jaja_ibuk', JSON.stringify(result.data));
+                    // Update layar dengan harga/menu terbaru
+                    renderKeLayar(result.data);
+                }
+            } catch (err) {
+                console.error("Gagal ambil data:", err);
+                if (!cacheData) {
+                    tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-2">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>';
+                }
+            }
+        }
+        
         muatMenu(); 
 
         function tambahMenu() {
