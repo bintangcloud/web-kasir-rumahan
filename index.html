@@ -147,7 +147,7 @@
         let semuaTransaksi = [];
         const PIN_RAHASIA = "2222"; 
 
-        // FORMAT FIX: Murni tambahin 0 di depan angka
+        // FORMAT: Pasti jadi INV-0001, INV-0002
         function formatNota(num) {
             return "INV-" + String(num).padStart(4, '0');
         }
@@ -169,7 +169,6 @@
             csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n";
             semuaTransaksi.forEach(function(trx) {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
-                // Pakai nomor urut buatan kita
                 let row = `${formatNota(trx.nomor_urut)},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
                 csvContent += row + "\n";
             });
@@ -288,6 +287,7 @@
 
         function tutupKonfirmasi() { document.getElementById('modal-konfirmasi').classList.add('hidden'); }
 
+        // MENGHITUNG OTOMATIS BERDASARKAN TOTAL DATA
         function prosesSimpanFinal() {
             const nama = document.getElementById('nama-pembeli').value;
             let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
@@ -295,12 +295,12 @@
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
                 
-                // JURUS ILUSI: Tarik jumlah data sebentar biar nomernya urut murni
+                // Ambil ulang semua data dari server untuk ngitung jumlahnya
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
-                    let nomorMurni = rData.data.length; // Jumlah transaksi = Nomer Nota 
+                    let totalTransaksi = rData.data.length; // Ini pasti urut 1, 2, 3
 
                     tutupKonfirmasi();
-                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(nomorMurni);
+                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(totalTransaksi);
                     document.getElementById('struk-tanggal').innerText = res.tanggal;
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                     
@@ -317,12 +317,14 @@
             document.getElementById('input-tanggal').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
-                let totalData = res.data.length;
-                // JURUS ILUSI: Bikin nomor urut sendiri dari 1 sampai habis
-                semuaTransaksi = res.data.map((trx, index) => {
-                    trx.nomor_urut = totalData - index; // Data paling atas dapet nomor paling gede
+                // Urutkan dari yg lama ke baru (berdasarkan ID TiDB) buat ngasih nomor urut
+                let dataUrut = res.data.sort((a, b) => a.id - b.id);
+                
+                semuaTransaksi = dataUrut.map((trx, index) => {
+                    trx.nomor_urut = index + 1; // Paksa nomor dari 1, 2, 3
                     return trx;
-                });
+                }).reverse(); // Dibalik biar nota terbaru ada di paling atas layar
+                
                 tampilkanListRekapan(semuaTransaksi); 
             });
         }
@@ -349,7 +351,6 @@
 
             data.forEach(trx => {
                 let tgl = trx.tanggal_transaksi.substring(0, 10);
-                // Pakai trx.nomor_urut buat ditampilin di layar!
                 html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
                     <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
                         <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.nomor_urut)}</span></div>
@@ -389,7 +390,6 @@
         function lihatDetail(id, nomor_urut, nama, tgl, total) {
             document.getElementById('modal-detail').classList.remove('hidden');
             document.getElementById('detail-nama').innerText = "Pelanggan: " + nama;
-            // Tampilkan nomor urut palsu kita
             document.getElementById('detail-nota').innerText = formatNota(nomor_urut);
             document.getElementById('detail-tgl').innerText = tgl;
             document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
