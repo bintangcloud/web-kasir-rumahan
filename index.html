@@ -149,8 +149,29 @@
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
-        let detailTrxSaatIni = null; // Menyimpan memori struk yang lagi dibuka
+        let detailTrxSaatIni = null; // Memori untuk cetak ulang
         const PIN_RAHASIA = "2222"; 
+
+        // RUMUS JAM BARU: AKURAT 100% SESUAI ZONA WAKTU HP
+        function formatTanggalCantik(tglString) {
+            const d = new Date(tglString);
+            const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+            const hari = String(d.getDate()).padStart(2, '0');
+            const bln = bulan[d.getMonth()];
+            const thn = d.getFullYear();
+            const jam = String(d.getHours()).padStart(2, '0');
+            const mnt = String(d.getMinutes()).padStart(2, '0');
+            return `${hari} ${bln} ${thn}, ${jam}:${mnt}`; // Hasil: "23 Mar 2026, 21:03"
+        }
+
+        // BUAT TANGGAL INPUT FILTER PENCARIAN
+        function formatTanggalUntukFilter(tglString) {
+            const d = new Date(tglString);
+            const hari = String(d.getDate()).padStart(2, '0');
+            const bln = String(d.getMonth() + 1).padStart(2, '0');
+            const thn = d.getFullYear();
+            return `${thn}-${bln}-${hari}`; // Hasil: "2026-03-23"
+        }
 
         function formatNota(num) {
             return "INV-" + String(num).padStart(4, '0');
@@ -172,8 +193,8 @@
             let csvContent = "data:text/csv;charset=utf-8,";
             csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n";
             semuaTransaksi.forEach(function(trx) {
-                let tgl = trx.tanggal_transaksi.substring(0, 10);
-                let row = `${formatNota(trx.nomor_urut)},"${trx.nama_pembeli}",${tgl},${trx.total_belanja}`;
+                let tglExcel = formatTanggalCantik(trx.tanggal_transaksi);
+                let row = `${formatNota(trx.nomor_urut)},"${trx.nama_pembeli}",${tglExcel},${trx.total_belanja}`;
                 csvContent += row + "\n";
             });
             var encodedUri = encodeURI(csvContent);
@@ -336,8 +357,9 @@
             
             let dataTerfilter = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
-                let tglTrx = trx.tanggal_transaksi.substring(0, 10);
-                let matchTgl = filterTgl ? (tglTrx === filterTgl) : true;
+                // Cek tanggal sesuai format input pencarian (YYYY-MM-DD)
+                let tglTrxFilter = formatTanggalUntukFilter(trx.tanggal_transaksi);
+                let matchTgl = filterTgl ? (tglTrxFilter === filterTgl) : true;
                 return matchNama && matchTgl;
             });
             tampilkanListRekapan(dataTerfilter); 
@@ -348,16 +370,14 @@
             if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Tidak ada penjualan di tanggal ini...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
 
             data.forEach(trx => {
-                let tgl = trx.tanggal_transaksi.substring(0, 10);
-                // Jamnya juga kita tampilin aja sekalian formatnya
-                let jamMenit = trx.tanggal_transaksi.substring(11, 16);
-                let tglStruk = trx.tanggal_transaksi.substring(0, 16).replace('T', ', ');
+                // PAKAI RUMUS TANGGAL CANTIK
+                let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
 
                 html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
-                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tglStruk}', ${trx.total_belanja})" class="cursor-pointer flex-1">
+                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tglCantik}', ${trx.total_belanja})" class="cursor-pointer flex-1">
                         <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.nomor_urut)}</span></div>
                         <div class="flex justify-between items-center mt-1 pr-3">
-                            <span class="text-xs text-slate-500">${tgl} ${jamMenit}</span>
+                            <span class="text-xs text-slate-500">${tglCantik}</span>
                             <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
@@ -396,7 +416,7 @@
             fetch('/api/transactions/' + id + '/details')
                 .then(res => res.json())
                 .then(res => {
-                    detailTrxSaatIni.items = res.data; // Simpan rincian belanjanya
+                    detailTrxSaatIni.items = res.data; // Simpan rincian belanjanya ke memori
 
                     let html = '';
                     res.data.forEach(item => {
@@ -411,33 +431,34 @@
                 .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
-        // FITUR PAMUNGKAS: CETAK ULANG NOTA MASA LALU
+        // FITUR PAMUNGKAS: CETAK ULANG NOTA MASA LALU YANG UDAH DIPERBAIKI TOTAL
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
 
-            // Ganti kepala struk pakai data masa lalu
+            // 1. Ganti kepala struk pakai data masa lalu
             document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(detailTrxSaatIni.nomor_urut);
             document.getElementById('struk-tanggal').innerText = detailTrxSaatIni.tgl + " (Cetak Ulang)";
             document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + detailTrxSaatIni.nama;
 
-            // Suntikkan rincian masa lalu ke layar struk utama
+            // 2. Suntikkan rincian masa lalu ke layar struk utama (Rangka HTML-nya udah dibenerin!)
             const daftar = document.getElementById('daftar-keranjang');
             daftar.innerHTML = ''; 
             detailTrxSaatIni.items.forEach((item) => {
                 daftar.innerHTML += `
                     <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
-                        <div class="hidden print:flex justify-between items-center w-full">
-                            <div><span class="font-semibold text-black">${item.nama_jaja}</span></div>
+                        <div class="flex justify-between items-center w-full">
+                            <div><span class="font-semibold text-slate-800 print:text-black">${item.nama_jaja}</span><span class="text-sm text-slate-500 ml-2 print:hidden">x${item.kuantitas}</span></div>
+                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${item.subtotal.toLocaleString('id-ID')}</div></div>
                         </div>
                         <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${item.subtotal.toLocaleString('id-ID')}</span></div>
                     </li>`;
             });
             document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
 
-            // Panggil printer!
+            // 3. Panggil printer!
             window.print();
 
-            // Balikin layar ke mode keranjang jualan saat ini biar gak keder
+            // 4. Balikin layar ke mode keranjang jualan saat ini biar dagangan nggak kacau
             renderKeranjang();
         }
 
