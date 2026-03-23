@@ -18,8 +18,8 @@
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
-            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Kasir Ibuk</h2>
-            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN Rahasia</p>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
+            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
             <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
             <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
         </div>
@@ -147,12 +147,11 @@
         // --- FITUR LOGIN PIN ---
         function cekPin() {
             const pin = document.getElementById('input-pin').value;
-            // GANTI ANGKA "1234" DI BAWAH INI DENGAN PIN YANG KAMU MAU
-            if(pin === "1234") { 
+            if(pin === "2222") { 
                 document.getElementById('layar-login').classList.add('hidden');
                 muatMenu(); // Panggil data dari satelit HANYA JIKA PIN BENAR
             } else {
-                alert("PIN Salah! Hayo mau ngapain? 🤨");
+                alert("PIN Salah!");
                 document.getElementById('input-pin').value = '';
             }
         }
