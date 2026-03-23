@@ -121,7 +121,7 @@ func init() {
 		// Simpan detail belanja
 		for _, item := range req.Keranjang {
 			detail := TransactionDetail{
-				TransactionID: trx.ID, // Pastikan ID ini dapet dari baris di atas
+				TransactionID: trx.ID,
 				ProductID:     item.ID,
 				Kuantitas:     item.Qty,
 			}
@@ -135,6 +135,15 @@ func init() {
 		})
 	})
 
+	// INI DIA YANG HILANG: GET TRANSACTIONS (UNTUK REKAPAN)
+	r.GET("/api/transactions", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		var trxs []Transaction
+		database.Order("tanggal_transaksi desc").Find(&trxs)
+		c.JSON(200, gin.H{"data": trxs})
+	})
+
+	// GET DETAILS
 	r.GET("/api/transactions/:id/details", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
