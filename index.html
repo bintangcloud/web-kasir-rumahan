@@ -147,9 +147,9 @@
         let semuaTransaksi = [];
         const PIN_RAHASIA = "2222"; 
 
-        // FORMAT ID JADI INV-0001
+        // FORMAT ID JADI INV-0001 (Dipotong 4 digit terakhir)
         function formatNota(id) {
-            return "INV-" + String(id).padStart(4, '0');
+            return "INV-" + String(id).slice(-4).padStart(4, '0');
         }
 
         function cekPin() {
