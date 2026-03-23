@@ -149,10 +149,9 @@
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
-        let detailTrxSaatIni = null; // Memori untuk cetak ulang
+        let detailTrxSaatIni = null; 
         const PIN_RAHASIA = "2222"; 
 
-        // RUMUS JAM BARU: AKURAT 100% SESUAI ZONA WAKTU HP
         function formatTanggalCantik(tglString) {
             const d = new Date(tglString);
             const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
@@ -161,16 +160,15 @@
             const thn = d.getFullYear();
             const jam = String(d.getHours()).padStart(2, '0');
             const mnt = String(d.getMinutes()).padStart(2, '0');
-            return `${hari} ${bln} ${thn}, ${jam}:${mnt}`; // Hasil: "23 Mar 2026, 21:03"
+            return `${hari} ${bln} ${thn}, ${jam}:${mnt}`; 
         }
 
-        // BUAT TANGGAL INPUT FILTER PENCARIAN
         function formatTanggalUntukFilter(tglString) {
             const d = new Date(tglString);
             const hari = String(d.getDate()).padStart(2, '0');
             const bln = String(d.getMonth() + 1).padStart(2, '0');
             const thn = d.getFullYear();
-            return `${thn}-${bln}-${hari}`; // Hasil: "2026-03-23"
+            return `${thn}-${bln}-${hari}`; 
         }
 
         function formatNota(num) {
@@ -357,7 +355,6 @@
             
             let dataTerfilter = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
-                // Cek tanggal sesuai format input pencarian (YYYY-MM-DD)
                 let tglTrxFilter = formatTanggalUntukFilter(trx.tanggal_transaksi);
                 let matchTgl = filterTgl ? (tglTrxFilter === filterTgl) : true;
                 return matchNama && matchTgl;
@@ -370,7 +367,6 @@
             if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Tidak ada penjualan di tanggal ini...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
 
             data.forEach(trx => {
-                // PAKAI RUMUS TANGGAL CANTIK
                 let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
 
                 html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
@@ -410,13 +406,12 @@
             document.getElementById('detail-total').innerText = "Rp " + total.toLocaleString('id-ID');
             document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
 
-            // Simpan ke memori buat dicetak ulang nanti
             detailTrxSaatIni = { id: id, nomor_urut: nomor_urut, nama: nama, tgl: tgl, total: total, items: [] };
 
             fetch('/api/transactions/' + id + '/details')
                 .then(res => res.json())
                 .then(res => {
-                    detailTrxSaatIni.items = res.data; // Simpan rincian belanjanya ke memori
+                    detailTrxSaatIni.items = res.data; 
 
                     let html = '';
                     res.data.forEach(item => {
@@ -431,34 +426,36 @@
                 .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
-        // FITUR PAMUNGKAS: CETAK ULANG NOTA MASA LALU YANG UDAH DIPERBAIKI TOTAL
+        // ==========================================
+        // FITUR CETAK ULANG YANG UDAH DI-BRUTAL-IN!
+        // ==========================================
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
 
-            // 1. Ganti kepala struk pakai data masa lalu
             document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(detailTrxSaatIni.nomor_urut);
             document.getElementById('struk-tanggal').innerText = detailTrxSaatIni.tgl + " (Cetak Ulang)";
             document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + detailTrxSaatIni.nama;
 
-            // 2. Suntikkan rincian masa lalu ke layar struk utama (Rangka HTML-nya udah dibenerin!)
             const daftar = document.getElementById('daftar-keranjang');
             daftar.innerHTML = ''; 
+            
+            // Layout ini didesain MURNI buat diprint, gak peduli Tailwind telat atau nggak!
             detailTrxSaatIni.items.forEach((item) => {
                 daftar.innerHTML += `
-                    <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
-                        <div class="flex justify-between items-center w-full">
-                            <div><span class="font-semibold text-slate-800 print:text-black">${item.nama_jaja}</span><span class="text-sm text-slate-500 ml-2 print:hidden">x${item.kuantitas}</span></div>
-                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${item.subtotal.toLocaleString('id-ID')}</div></div>
+                    <li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
+                        <div class="font-bold text-black text-base">${item.nama_jaja}</div>
+                        <div class="flex justify-between w-full text-sm text-black mt-1">
+                            <span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span>
+                            <span class="font-bold">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
                         </div>
-                        <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${item.subtotal.toLocaleString('id-ID')}</span></div>
                     </li>`;
             });
             document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
 
-            // 3. Panggil printer!
+            // Gasss cetak!
             window.print();
 
-            // 4. Balikin layar ke mode keranjang jualan saat ini biar dagangan nggak kacau
+            // Selesai cetak, balikin layarnya ke mode keranjang jualan saat ini
             renderKeranjang();
         }
 
