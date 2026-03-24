@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* CSS KHUSUS BUAT NGATUR 2 MODE PRINT (STRUK vs LAPORAN PDF) */
         @media print {
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
             body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
-            
-            body.print-mode-rekapan * { visibility: hidden; }
-            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
-            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
             .print\:hidden { display: none !important; }
         }
     </style>
@@ -25,7 +20,7 @@
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
             <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
-            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN (Otomatis Masuk)</p>
+            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
             <input type="password" id="input-pin" oninput="cekPinOtomatis()" maxlength="4" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
         </div>
     </div>
@@ -39,7 +34,8 @@
         </div>
 
         <div class="p-4 max-w-md mx-auto">
-            <input type="text" id="nama-pembeli" placeholder="Masukkan Nama Pelanggan..." 
+            <label for="nama-pembeli" class="block text-slate-600 font-bold mb-1 ml-1 print:hidden text-sm">Nama Pelanggan:</label>
+            <input type="text" id="nama-pembeli" placeholder="Ketik nama di sini..." 
                 class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg print:hidden">
 
             <div class="flex justify-between items-center mb-3 print:hidden">
@@ -205,20 +201,18 @@
             return "INV-" + String(num).padStart(4, '0');
         }
 
-        // FUNGSI CEK PIN OTOMATIS (Mata Batin)
         function cekPinOtomatis() {
             const inputField = document.getElementById('input-pin');
             const pin = inputField.value;
 
-            // Kalau panjang ketikannya udah 4 digit, langsung cek!
             if (pin.length === PIN_RAHASIA.length) {
                 if(pin === PIN_RAHASIA) { 
                     document.getElementById('layar-login').classList.add('hidden');
                     muatMenu(); 
-                    inputField.value = ''; // Bersihin, siapa tau besok-besok ada fitur logout
+                    inputField.value = ''; 
                 } else {
                     alert("PIN Salah! Coba lagi.");
-                    inputField.value = ''; // Hapus ketikan biar Ibuk langsung bisa ngetik ulang
+                    inputField.value = ''; 
                 }
             }
         }
