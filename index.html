@@ -20,14 +20,13 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative z-0">
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
             <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
-            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
-            <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
-            <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
+            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN (Otomatis Masuk)</p>
+            <input type="password" id="input-pin" oninput="cekPinOtomatis()" maxlength="4" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
         </div>
     </div>
 
@@ -206,14 +205,21 @@
             return "INV-" + String(num).padStart(4, '0');
         }
 
-        function cekPin() {
-            const pin = document.getElementById('input-pin').value;
-            if(pin === PIN_RAHASIA) { 
-                document.getElementById('layar-login').classList.add('hidden');
-                muatMenu(); 
-            } else {
-                alert("PIN Salah!");
-                document.getElementById('input-pin').value = '';
+        // FUNGSI CEK PIN OTOMATIS (Mata Batin)
+        function cekPinOtomatis() {
+            const inputField = document.getElementById('input-pin');
+            const pin = inputField.value;
+
+            // Kalau panjang ketikannya udah 4 digit, langsung cek!
+            if (pin.length === PIN_RAHASIA.length) {
+                if(pin === PIN_RAHASIA) { 
+                    document.getElementById('layar-login').classList.add('hidden');
+                    muatMenu(); 
+                    inputField.value = ''; // Bersihin, siapa tau besok-besok ada fitur logout
+                } else {
+                    alert("PIN Salah! Coba lagi.");
+                    inputField.value = ''; // Hapus ketikan biar Ibuk langsung bisa ngetik ulang
+                }
             }
         }
 
@@ -344,14 +350,11 @@
             renderKeranjang();
         }
 
-        // FUNGSI UBAH QTY DIBIKIN KOSONG DEFAULT-NYA BIAR GAK RIBET DI HP
         function ubahQtyKeranjang(id) {
             let barang = keranjang.find(item => item.id === id);
             if (barang) {
-                // Default value diganti jadi string kosong ""
                 let qtyBaru = prompt(`Jumlah ${barang.nama} saat ini: ${barang.qty}\nMasukkan jumlah yang baru:`, "");
                 
-                // Cek kalau dia nggak pencet Batal dan isiannya gak kosong
                 if (qtyBaru !== null && qtyBaru.trim() !== "") {
                     if (!isNaN(qtyBaru) && parseInt(qtyBaru) > 0) {
                         barang.qty = parseInt(qtyBaru);
