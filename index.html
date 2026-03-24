@@ -7,6 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* TENDANG PANAH DI INPUT ANGKA (Request Ibuk) */
+        input[type="number"]::-webkit-outer-spin-button, 
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* MODE PRINT KHUSUS STRUK DAN PDF */
         @media print {
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
@@ -112,11 +123,12 @@
             <h2 class="font-bold text-xl text-rose-600 text-center mb-4">Catat Pengeluaran</h2>
             
             <label class="block text-slate-600 font-bold mb-1 text-sm">Beli apa? (Keterangan)</label>
-            <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli Es Batu, Mika..." onkeypress="if(event.key === 'Enter') this.blur();"
+            <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli Es Batu..." onkeypress="if(event.key === 'Enter') this.blur();"
                 class="w-full p-3 rounded-xl border border-slate-300 mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
 
             <label class="block text-slate-600 font-bold mb-1 text-sm">Berapa harganya? (Rp)</label>
-            <input type="number" id="input-nom-pengeluaran" placeholder="Misal: 15000" onkeypress="if(event.key === 'Enter') this.blur();"
+            <input type="text" inputmode="numeric" id="input-nom-pengeluaran" placeholder="Misal: 15000" 
+                oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeypress="if(event.key === 'Enter') this.blur();"
                 class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
 
             <div class="flex gap-3">
@@ -127,7 +139,7 @@
     </div>
 
     <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
-        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[85vh] flex flex-col shadow-2xl relative">
+        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[90vh] flex flex-col shadow-2xl relative">
             <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
             
             <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
@@ -137,9 +149,17 @@
                 <button id="tab-pengeluaran" onclick="gantiTab('pengeluaran')" class="flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition">Pengeluaran</button>
             </div>
 
-            <div class="flex gap-2 mb-3">
-                <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="Cari nama / ket..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm w-1/2">
-                <input type="date" id="input-tanggal-rekap" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm w-1/2">
+            <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="🔍 Cari nama / keterangan..." class="w-full p-2 mb-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
+            <div class="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-slate-500 block">Dari Tgl:</label>
+                    <input type="date" id="input-tgl-mulai-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
+                </div>
+                <div class="border-l border-slate-300 mx-1"></div>
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-slate-500 block">S/d Tgl:</label>
+                    <input type="date" id="input-tgl-akhir-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
+                </div>
             </div>
 
             <div id="area-list-pemasukan" class="overflow-y-auto flex-1">
@@ -150,21 +170,31 @@
                 <ul id="list-pengeluaran" class="space-y-2 text-sm"></ul>
             </div>
 
-            <div class="mt-4 border-t border-slate-200 pt-4 flex justify-between items-center">
-                <span class="text-slate-600 font-bold" id="label-footer-rekap">Total Pemasukan:</span>
-                <span class="font-extrabold text-emerald-600 text-xl" id="angka-footer-rekap">Rp 0</span>
+            <div class="mt-3 border-t border-slate-200 pt-3 flex justify-between items-center">
+                <span class="text-slate-600 font-bold text-sm" id="label-footer-rekap">Total Pemasukan:</span>
+                <span class="font-extrabold text-emerald-600 text-lg" id="angka-footer-rekap">Rp 0</span>
             </div>
+
+            <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
+                📄 Unduh Laporan (Tab Pemasukan)
+            </button>
         </div>
     </div>
 
     <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
         <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
             <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
-            <h2 class="font-bold text-xl text-slate-800 text-center mb-5 border-b pb-3">Dashboard Laba Rugi</h2>
+            <h2 class="font-bold text-xl text-slate-800 text-center mb-4 border-b pb-3">Dashboard Laba Rugi</h2>
             
-            <div class="mb-5 text-center">
-                <label class="text-xs font-bold text-slate-500 block mb-1">Filter Tanggal Laporan:</label>
-                <input type="date" id="input-tanggal-laba" onchange="hitungLabaRugi()" class="p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full text-center">
+            <div class="flex gap-2 mb-5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-slate-500 block mb-1">Dari Tgl:</label>
+                    <input type="date" id="input-tgl-mulai-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-slate-500 block mb-1">S/d Tgl:</label>
+                    <input type="date" id="input-tgl-akhir-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
+                </div>
             </div>
 
             <div class="space-y-3 mb-6">
@@ -183,7 +213,7 @@
             </div>
 
             <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
-                📄 Unduh Laporan PDF
+                📄 Unduh Laporan Lengkap PDF
             </button>
         </div>
     </div>
@@ -248,6 +278,21 @@
         </div>
     </div>
 
+    <div id="area-pdf-single" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[800px] z-[99999] shadow-2xl">
+        <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2" id="pdf-single-title">Laporan</h2>
+        <p id="pdf-single-tgl" class="mb-4 text-center text-sm font-semibold mt-2"></p>
+        <table class="w-full text-left border-collapse mb-6 text-sm">
+            <thead>
+                <tr class="border-b-2 border-black" id="pdf-single-thead"></tr>
+            </thead>
+            <tbody id="pdf-single-tbody"></tbody>
+        </table>
+        <div class="flex justify-between items-center border-t-2 border-black pt-2">
+            <span class="font-bold text-lg" id="pdf-single-total-label">Total:</span>
+            <span id="pdf-single-total" class="font-bold text-xl">Rp 0</span>
+        </div>
+    </div>
+
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
@@ -281,6 +326,14 @@
 
         function formatNota(num) { return "INV-" + String(num).padStart(4, '0'); }
 
+        // FUNGSI LOGIKA RENTANG WAKTU
+        function isTanggalSesuai(tglItem, start, end) {
+            if (!start && !end) return true;
+            if (start && !end) return tglItem >= start;
+            if (!start && end) return tglItem <= end;
+            return tglItem >= start && tglItem <= end;
+        }
+
         function cekPinOtomatis() {
             const inputField = document.getElementById('input-pin');
             const pin = inputField.value;
@@ -293,16 +346,12 @@
             }
         }
 
-        // --- FUNGSI INPUT PENGELUARAN BARU (PAKAI MODAL CAKEP) ---
         function bukaInputPengeluaran() {
             document.getElementById('modal-pengeluaran').classList.remove('hidden');
             document.getElementById('input-ket-pengeluaran').value = '';
             document.getElementById('input-nom-pengeluaran').value = '';
         }
-
-        function tutupInputPengeluaran() {
-            document.getElementById('modal-pengeluaran').classList.add('hidden');
-        }
+        function tutupInputPengeluaran() { document.getElementById('modal-pengeluaran').classList.add('hidden'); }
 
         function simpanPengeluaranFinal() {
             if (document.activeElement) document.activeElement.blur(); 
@@ -317,11 +366,9 @@
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ keterangan: ket, nominal: parseInt(nom) })
             }).then(res => res.json()).then(data => { 
-                alert(data.pesan); 
-                tutupInputPengeluaran();
+                alert(data.pesan); tutupInputPengeluaran();
             });
         }
-        // --------------------------------------------------------
 
         function gantiTab(tabName) {
             tabAktif = tabName;
@@ -332,6 +379,7 @@
             
             const labelFooter = document.getElementById('label-footer-rekap');
             const angkaFooter = document.getElementById('angka-footer-rekap');
+            const btnUnduh = document.getElementById('btn-unduh-single');
 
             if(tabName === 'pemasukan') {
                 tabIn.className = "flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition";
@@ -342,6 +390,9 @@
                 labelFooter.innerText = "Total Pemasukan:";
                 angkaFooter.className = "font-extrabold text-emerald-600 text-xl";
                 angkaFooter.innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
+                
+                btnUnduh.className = "w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm";
+                btnUnduh.innerText = "📄 Unduh Laporan (Tab Pemasukan)";
             } else {
                 tabOut.className = "flex-1 font-bold pb-2 text-rose-500 border-b-2 border-rose-500 transition";
                 tabIn.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
@@ -351,6 +402,9 @@
                 labelFooter.innerText = "Total Pengeluaran:";
                 angkaFooter.className = "font-extrabold text-rose-600 text-xl";
                 angkaFooter.innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
+
+                btnUnduh.className = "w-full mt-3 bg-rose-600 text-white font-bold py-2.5 rounded-xl active:bg-rose-700 shadow transition flex justify-center items-center gap-2 text-sm";
+                btnUnduh.innerText = "📄 Unduh Laporan (Tab Pengeluaran)";
             }
         }
 
@@ -498,69 +552,80 @@
 
         function tutupKonfirmasi() { document.getElementById('modal-konfirmasi').classList.add('hidden'); }
 
+        // FUNGSI SIMPAN STRUK DIPERKUAT (ANTI-GAGAL)
         function prosesSimpanFinal() {
             const nama = document.getElementById('nama-pembeli').value;
             let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
             
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
+                
+                tutupKonfirmasi();
+                
+                // Minta ulang data cuma buat nomor nota
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
-                    let totalTransaksi = rData.data.length; 
-                    tutupKonfirmasi();
+                    let totalTransaksi = rData.data ? rData.data.length : res.id_nota; 
+                    
                     document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(totalTransaksi);
                     document.getElementById('struk-tanggal').innerText = res.tanggal;
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
+                    
                     document.body.classList.add('print-mode-struk');
                     window.print(); 
+                    
                     setTimeout(function() {
                         document.body.classList.remove('print-mode-struk');
                         keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
                     }, 1500); 
+                }).catch(e => {
+                    // JALUR DARURAT KALAU INTERNET LEMOT
+                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota || 999);
+                    document.getElementById('struk-tanggal').innerText = res.tanggal || formatTanggalCantik(new Date().toISOString());
+                    document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
+                    
+                    document.body.classList.add('print-mode-struk');
+                    window.print(); 
+                    
+                    setTimeout(function() {
+                        document.body.classList.remove('print-mode-struk');
+                        keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+                    }, 1500);
                 });
-            });
+            }).catch(e => { alert("Gagal menyimpan pesanan. Cek koneksi server!"); });
         }
 
-        // --- FUNGSI LABA RUGI BARU ---
+        // --- DASHBOARD LABA RUGI (RENTANG TANGGAL) ---
         function bukaLabaRugi() {
             document.getElementById('modal-laba').classList.remove('hidden');
-            document.getElementById('input-tanggal-laba').value = '';
-            hitungLabaRugi(); // Hitung semuanya pas baru buka
+            document.getElementById('input-tgl-mulai-laba').value = '';
+            document.getElementById('input-tgl-akhir-laba').value = '';
+            hitungLabaRugi(); 
         }
 
         function tutupLabaRugi() { document.getElementById('modal-laba').classList.add('hidden'); }
 
         function hitungLabaRugi() {
-            let filterTgl = document.getElementById('input-tanggal-laba').value;
+            let startTgl = document.getElementById('input-tgl-mulai-laba').value;
+            let endTgl = document.getElementById('input-tgl-akhir-laba').value;
             let totalIn = 0; let totalOut = 0;
 
-            // Fetch ulang biar datanya paling update
             fetch('/api/transactions').then(res => res.json()).then(resTrx => {
-                let trxFiltered = resTrx.data;
-                if(filterTgl) {
-                    trxFiltered = trxFiltered.filter(t => formatTanggalUntukFilter(t.tanggal_transaksi) === filterTgl);
-                }
+                let trxFiltered = resTrx.data.filter(t => isTanggalSesuai(formatTanggalUntukFilter(t.tanggal_transaksi), startTgl, endTgl));
                 trxFiltered.forEach(t => totalIn += t.total_belanja);
                 document.getElementById('laba-pemasukan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
                 
-                // Fetch Pengeluaran
                 fetch('/api/expenses').then(res => res.json()).then(resExp => {
-                    let expFiltered = resExp.data;
-                    if(filterTgl) {
-                        expFiltered = expFiltered.filter(e => formatTanggalUntukFilter(e.tanggal) === filterTgl);
-                    }
+                    let expFiltered = resExp.data.filter(e => isTanggalSesuai(formatTanggalUntukFilter(e.tanggal), startTgl, endTgl));
                     expFiltered.forEach(e => totalOut += e.nominal);
                     document.getElementById('laba-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
 
-                    // Update Bersih
                     let bersih = totalIn - totalOut;
                     document.getElementById('laba-bersih').innerText = `Rp ${bersih.toLocaleString('id-ID')}`;
                     if(bersih < 0) { document.getElementById('laba-bersih').className = "font-black text-rose-600 text-2xl"; } 
                     else { document.getElementById('laba-bersih').className = "font-black text-blue-700 text-2xl"; }
 
-                    // Simpan data rekapan buat dicetak PDF
                     dataRekapanSaatIni = trxFiltered;
                     dataPengeluaranSaatIni = expFiltered;
-                    // Kasih nomor urut biar cantik di PDF
                     dataRekapanSaatIni.reverse().forEach((t, idx) => t.nomor_urut = idx + 1);
                     dataRekapanSaatIni.reverse();
                 });
@@ -573,7 +638,8 @@
             document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
             document.getElementById('list-pengeluaran').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
             document.getElementById('input-cari-rekap').value = ''; 
-            document.getElementById('input-tanggal-rekap').value = ''; 
+            document.getElementById('input-tgl-mulai-rekap').value = ''; 
+            document.getElementById('input-tgl-akhir-rekap').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
                 let dataUrut = res.data.sort((a, b) => a.id - b.id);
@@ -592,17 +658,18 @@
 
         function filterRekapan() {
             let kataKunci = document.getElementById('input-cari-rekap').value.toLowerCase();
-            let filterTgl = document.getElementById('input-tanggal-rekap').value; 
+            let startTgl = document.getElementById('input-tgl-mulai-rekap').value; 
+            let endTgl = document.getElementById('input-tgl-akhir-rekap').value; 
             
             dataRekapanSaatIni = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
-                let matchTgl = filterTgl ? (formatTanggalUntukFilter(trx.tanggal_transaksi) === filterTgl) : true;
+                let matchTgl = isTanggalSesuai(formatTanggalUntukFilter(trx.tanggal_transaksi), startTgl, endTgl);
                 return matchNama && matchTgl;
             });
 
             dataPengeluaranSaatIni = semuaPengeluaran.filter(exp => {
                 let matchKet = exp.keterangan.toLowerCase().includes(kataKunci);
-                let matchTgl = filterTgl ? (formatTanggalUntukFilter(exp.tanggal) === filterTgl) : true;
+                let matchTgl = isTanggalSesuai(formatTanggalUntukFilter(exp.tanggal), startTgl, endTgl);
                 return matchKet && matchTgl;
             });
 
@@ -647,7 +714,6 @@
             });
             document.getElementById('list-pengeluaran').innerHTML = htmlOut;
 
-            // Trigger update UI sesuai tab yang aktif
             gantiTab(tabAktif);
         }
 
@@ -717,13 +783,20 @@
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
 
+        function formatJudulTanggal(start, end) {
+            if (start && end) return `${start} s/d ${end}`;
+            if (start) return `Dari tanggal ${start}`;
+            if (end) return `Sampai tanggal ${end}`;
+            return `Semua Waktu`;
+        }
+
+        // FUNGSI UNDUH PDF LABA RUGI (LENGKAP 2 TABEL)
         function cetakPDF() {
             const tbIn = document.getElementById('pdf-tbody-pemasukan');
             const tbOut = document.getElementById('pdf-tbody-pengeluaran');
             tbIn.innerHTML = ''; tbOut.innerHTML = '';
             let tIn = 0; let tOut = 0;
 
-            // Cetak data rekapan yang udah kefilter di menu Laba Rugi
             dataRekapanSaatIni.forEach(trx => {
                 tbIn.innerHTML += `<tr class="border-b border-gray-300">
                     <td class="py-1 pl-1">${formatNota(trx.nomor_urut || 0)}</td><td class="py-1">${trx.nama_pembeli}</td><td class="py-1 pr-1 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
@@ -744,8 +817,9 @@
             let laba = tIn - tOut;
             document.getElementById('pdf-laba').innerText = `Rp ${laba.toLocaleString('id-ID')}`;
 
-            let tglFilter = document.getElementById('input-tanggal-laba').value;
-            document.getElementById('pdf-tgl-laporan').innerText = tglFilter ? `Filter Tanggal: ${tglFilter}` : `Semua Waktu`;
+            let tglStart = document.getElementById('input-tgl-mulai-laba').value;
+            let tglEnd = document.getElementById('input-tgl-akhir-laba').value;
+            document.getElementById('pdf-tgl-laporan').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
 
             const elemenPDF = document.getElementById('area-pdf-rekapan');
             elemenPDF.classList.remove('hidden');
@@ -753,6 +827,63 @@
 
             setTimeout(() => {
                 var opsiPrint = { margin: 0.3, filename: 'Laporan_Keuangan_Ibuk.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, windowWidth: 1100 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
+                html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => { elemenPDF.classList.add('hidden'); });
+            }, 800); 
+        }
+
+        // FUNGSI UNDUH PDF TAB REKAPAN AJA (SATUAN)
+        function cetakPDFSingle() {
+            const tbody = document.getElementById('pdf-single-tbody');
+            const thead = document.getElementById('pdf-single-thead');
+            tbody.innerHTML = '';
+            
+            let tglStart = document.getElementById('input-tgl-mulai-rekap').value;
+            let tglEnd = document.getElementById('input-tgl-akhir-rekap').value;
+            document.getElementById('pdf-single-tgl').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
+
+            if (tabAktif === 'pemasukan') {
+                if (dataRekapanSaatIni.length === 0) { alert("Data Pemasukan Kosong!"); return; }
+                document.getElementById('pdf-single-title').innerText = "Laporan Pemasukan Jaja";
+                document.getElementById('pdf-single-total-label').innerText = "Total Pemasukan:";
+                document.getElementById('pdf-single-total').className = "font-bold text-xl text-emerald-700";
+                document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
+                
+                thead.innerHTML = `<th class="py-2 pl-2">Nota</th><th class="py-2">Pelanggan</th><th class="py-2">Waktu</th><th class="py-2 pr-2 text-right">Total</th>`;
+                
+                dataRekapanSaatIni.forEach(trx => {
+                    let tgl = formatTanggalCantik(trx.tanggal_transaksi);
+                    tbody.innerHTML += `<tr class="border-b border-gray-300">
+                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut || 0)}</td>
+                        <td class="py-2">${trx.nama_pembeli}</td>
+                        <td class="py-2">${tgl}</td>
+                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                    </tr>`;
+                });
+            } else {
+                if (dataPengeluaranSaatIni.length === 0) { alert("Data Pengeluaran Kosong!"); return; }
+                document.getElementById('pdf-single-title').innerText = "Laporan Pengeluaran Jaja";
+                document.getElementById('pdf-single-total-label').innerText = "Total Pengeluaran:";
+                document.getElementById('pdf-single-total').className = "font-bold text-xl text-rose-700";
+                document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
+                
+                thead.innerHTML = `<th class="py-2 pl-2">Tanggal</th><th class="py-2">Keterangan</th><th class="py-2 pr-2 text-right">Nominal</th>`;
+                
+                dataPengeluaranSaatIni.forEach(exp => {
+                    let tgl = formatTanggalCantik(exp.tanggal);
+                    tbody.innerHTML += `<tr class="border-b border-gray-300">
+                        <td class="py-2 pl-2">${tgl}</td>
+                        <td class="py-2">${exp.keterangan}</td>
+                        <td class="py-2 pr-2 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
+                    </tr>`;
+                });
+            }
+
+            const elemenPDF = document.getElementById('area-pdf-single');
+            elemenPDF.classList.remove('hidden');
+            window.scrollTo(0, 0); 
+
+            setTimeout(() => {
+                var opsiPrint = { margin: 0.5, filename: `Laporan_${tabAktif}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
                 html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => { elemenPDF.classList.add('hidden'); });
             }, 800); 
         }
