@@ -156,23 +156,6 @@
         </div>
     </div>
 
-    <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
-            <h2 class="font-bold text-lg text-slate-800 text-center mb-3">Konfirmasi Pesanan</h2>
-            <div class="text-sm text-slate-600 mb-2 border-b border-slate-200 pb-2">
-                Pelanggan: <span id="konfirm-nama" class="font-bold text-slate-800"></span>
-            </div>
-            <ul id="konfirm-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto text-sm"></ul>
-            <div class="flex justify-between items-center font-bold text-lg text-slate-800 border-t border-slate-200 pt-2 mb-5">
-                <span>Total:</span><span id="konfirm-total" class="text-emerald-600">Rp 0</span>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="tutupKonfirmasi()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
-                <button onclick="prosesSimpanFinal()" class="w-1/2 bg-emerald-600 text-white font-bold p-3 rounded-xl active:bg-emerald-700 transition">Ya, Simpan!</button>
-            </div>
-        </div>
-    </div>
-
     <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[800px] z-[-50]">
         <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Keuangan (GINA & ULI)</h2>
         <p id="pdf-tgl-laporan" class="mb-6 text-center text-sm font-semibold mt-2"></p>
@@ -218,7 +201,7 @@
         let keranjang = [];
         let semuaTransaksi = [];
         let dataRekapanSaatIni = []; 
-        let semuaPengeluaran = []; // DATA PENGELUARAN
+        let semuaPengeluaran = []; 
         let dataPengeluaranSaatIni = []; 
         let detailTrxSaatIni = null; 
         let tabAktif = 'pemasukan';
@@ -264,8 +247,8 @@
             }
         }
 
-        // FUNGSI BARU: MENCATAT PENGELUARAN
         function tambahPengeluaran() {
+            if (document.activeElement) document.activeElement.blur(); 
             let ket = prompt("Keterangan pengeluaran (misal: Beli Mika, Es Batu):");
             if (!ket || ket.trim() === "") return;
             let nom = prompt("Nominal pengeluaran (misal: 25000):");
@@ -473,7 +456,6 @@
             document.getElementById('input-cari').value = ''; 
             document.getElementById('input-tanggal').value = ''; 
             
-            // Tarik Pemasukan
             fetch('/api/transactions').then(res => res.json()).then(res => { 
                 let dataUrut = res.data.sort((a, b) => a.id - b.id);
                 semuaTransaksi = dataUrut.map((trx, index) => { trx.nomor_urut = index + 1; return trx; }).reverse(); 
@@ -481,7 +463,6 @@
                 filterRekapan();
             });
 
-            // Tarik Pengeluaran
             fetch('/api/expenses').then(res => res.json()).then(res => {
                 semuaPengeluaran = res.data;
                 dataPengeluaranSaatIni = semuaPengeluaran;
@@ -495,17 +476,16 @@
             let kataKunci = document.getElementById('input-cari').value.toLowerCase();
             let filterTgl = document.getElementById('input-tanggal').value; 
             
-            // Filter Pemasukan
             dataRekapanSaatIni = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
                 let matchTgl = filterTgl ? (formatTanggalUntukFilter(trx.tanggal_transaksi) === filterTgl) : true;
                 return matchNama && matchTgl;
             });
 
-            // Filter Pengeluaran
+            // INI DIA YANG TADI TYPO (trx.tanggal jadi exp.tanggal)
             dataPengeluaranSaatIni = semuaPengeluaran.filter(exp => {
                 let matchKet = exp.keterangan.toLowerCase().includes(kataKunci);
-                let matchTgl = filterTgl ? (formatTanggalUntukFilter(trx.tanggal) === filterTgl) : true;
+                let matchTgl = filterTgl ? (formatTanggalUntukFilter(exp.tanggal) === filterTgl) : true;
                 return matchKet && matchTgl;
             });
 
@@ -516,7 +496,6 @@
             let htmlIn = ''; let totalIn = 0;
             let htmlOut = ''; let totalOut = 0;
 
-            // Render Pemasukan
             if (dataRekapanSaatIni.length === 0) { htmlIn = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
             dataRekapanSaatIni.forEach(trx => {
                 let tgl = formatTanggalCantik(trx.tanggal_transaksi);
@@ -535,7 +514,6 @@
             document.getElementById('list-rekapan').innerHTML = htmlIn;
             document.getElementById('total-semua-rekapan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
 
-            // Render Pengeluaran
             if (dataPengeluaranSaatIni.length === 0) { htmlOut = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
             dataPengeluaranSaatIni.forEach(exp => {
                 let tgl = formatTanggalCantik(exp.tanggal);
@@ -554,7 +532,6 @@
             document.getElementById('list-pengeluaran').innerHTML = htmlOut;
             document.getElementById('total-semua-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
 
-            // Hitung Bersih
             let bersih = totalIn - totalOut;
             document.getElementById('total-bersih').innerText = `Rp ${bersih.toLocaleString('id-ID')}`;
             if(bersih < 0) { document.getElementById('total-bersih').className = "font-extrabold text-rose-600 text-xl"; } 
@@ -641,7 +618,7 @@
             });
 
             dataPengeluaranSaatIni.forEach(exp => {
-                let tgl = formatTanggalCantik(exp.tanggal).substring(0, 6); // Ambil tgl & bln aja
+                let tgl = formatTanggalCantik(exp.tanggal).substring(0, 6); 
                 tbOut.innerHTML += `<tr class="border-b border-gray-300">
                     <td class="py-1 pl-1">${tgl}</td><td class="py-1">${exp.keterangan}</td><td class="py-1 pr-1 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
                 </tr>`;

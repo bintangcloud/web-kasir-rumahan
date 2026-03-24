@@ -38,6 +38,16 @@ type TransactionDetail struct {
 
 func (TransactionDetail) TableName() string { return "transaction_details" }
 
+// FITUR BARU: TABEL PENGELUARAN
+type Expense struct {
+	ID         int       `gorm:"primaryKey;column:id" json:"id"`
+	Keterangan string    `gorm:"column:keterangan" json:"keterangan"`
+	Nominal    int       `gorm:"column:nominal" json:"nominal"`
+	Tanggal    time.Time `gorm:"column:tanggal" json:"tanggal"`
+}
+
+func (Expense) TableName() string { return "expenses" }
+
 type RequestPesanan struct {
 	NamaPembeli string `json:"nama_pembeli"`
 	TotalHarga  int    `json:"total_harga"`
@@ -45,6 +55,11 @@ type RequestPesanan struct {
 		ID  int `json:"id"`
 		Qty int `json:"qty"`
 	} `json:"keranjang"`
+}
+
+type RequestPengeluaran struct {
+	Keterangan string `json:"keterangan"`
+	Nominal    int    `json:"nominal"`
 }
 
 type DetailResponse struct {
@@ -76,9 +91,11 @@ func init() {
 	})
 
 	if err == nil {
-		db.AutoMigrate(&Product{}, &Transaction{}, &TransactionDetail{})
+		// TAMBAHIN EXPENSE KE AUTO MIGRATE
+		db.AutoMigrate(&Product{}, &Transaction{}, &TransactionDetail{}, &Expense{})
 	}
 
+	// --- ROUTES PRODUK ---
 	r.GET("/api/products", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var products []Product
@@ -95,7 +112,6 @@ func init() {
 		}
 	})
 
-	// FITUR BARU: UPDATE (EDIT) MENU
 	r.PUT("/api/products/:id", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
@@ -113,6 +129,7 @@ func init() {
 		c.JSON(200, gin.H{"pesan": "Menu berhasil dihapus!"})
 	})
 
+	// --- ROUTES TRANSAKSI (PEMASUKAN) ---
 	r.POST("/api/transactions", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		var req RequestPesanan
@@ -155,6 +172,33 @@ func init() {
 		database.Where("transaction_id = ?", id).Delete(&TransactionDetail{})
 		database.Delete(&Transaction{}, id)
 		c.JSON(200, gin.H{"pesan": "Nota berhasil dihapus!"})
+	})
+
+	// --- ROUTES PENGELUARAN BARU ---
+	r.POST("/api/expenses", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		var req RequestPengeluaran
+		if err := c.ShouldBindJSON(&req); err != nil {
+			return
+		}
+		waktuSekarang := time.Now().In(lokasiWita)
+		expense := Expense{Keterangan: req.Keterangan, Nominal: req.Nominal, Tanggal: waktuSekarang}
+		database.Create(&expense)
+		c.JSON(200, gin.H{"pesan": "Pengeluaran berhasil dicatat!"})
+	})
+
+	r.GET("/api/expenses", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		var expenses []Expense
+		database.Order("tanggal desc").Find(&expenses)
+		c.JSON(200, gin.H{"data": expenses})
+	})
+
+	r.DELETE("/api/expenses/:id", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		id := c.Param("id")
+		database.Delete(&Expense{}, id)
+		c.JSON(200, gin.H{"pesan": "Catatan pengeluaran dihapus!"})
 	})
 
 	app = r
