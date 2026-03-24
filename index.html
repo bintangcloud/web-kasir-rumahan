@@ -5,22 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* CSS KHUSUS BUAT NGATUR 2 MODE PRINT (STRUK vs LAPORAN PDF) */
         @media print {
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
             body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
-            
-            body.print-mode-rekapan * { visibility: hidden; }
-            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
-            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
             .print\:hidden { display: none !important; }
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative z-0">
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
@@ -110,7 +105,7 @@
                 <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
                 <div class="flex items-center gap-2">
                     <button onclick="cetakPDF()" class="bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-red-700 shadow flex items-center gap-1 transition">
-                        📄 Cetak PDF
+                        📄 Unduh PDF
                     </button>
                     <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
                 </div>
@@ -152,7 +147,7 @@
         </div>
     </div>
 
-    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans">
+    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[800px] z-[-50]">
         <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Penjualan (GINA & ULI)</h2>
         <p id="pdf-tgl-laporan" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         
@@ -166,7 +161,7 @@
                 </tr>
             </thead>
             <tbody id="pdf-tbody">
-                </tbody>
+            </tbody>
         </table>
         
         <div class="flex justify-between items-center border-t-2 border-black pt-2">
@@ -178,7 +173,7 @@
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
-        let dataRekapanSaatIni = []; // Nyimpen data khusus buat di-print PDF
+        let dataRekapanSaatIni = []; 
         let detailTrxSaatIni = null; 
         const PIN_RAHASIA = "2222"; 
 
@@ -216,7 +211,6 @@
             }
         }
 
-        // FUNGSI BARU: CETAK PDF SEBAGAI PENGGANTI EXCEL
         function cetakPDF() {
             if (dataRekapanSaatIni.length === 0) { alert("Belum ada data penjualan untuk dicetak!"); return; }
 
@@ -224,15 +218,14 @@
             tbody.innerHTML = '';
             let totalPendapatan = 0;
 
-            // Masukin data rekapan ke dalam tabel PDF
             dataRekapanSaatIni.forEach(trx => {
                 let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
                 tbody.innerHTML += `
                     <tr class="border-b border-gray-300">
-                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut)}</td>
-                        <td class="py-2">${trx.nama_pembeli}</td>
-                        <td class="py-2">${tglCantik}</td>
-                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                        <td class="py-3 pl-2">${formatNota(trx.nomor_urut)}</td>
+                        <td class="py-3">${trx.nama_pembeli}</td>
+                        <td class="py-3">${tglCantik}</td>
+                        <td class="py-3 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
                     </tr>
                 `;
                 totalPendapatan += trx.total_belanja;
@@ -240,22 +233,25 @@
 
             document.getElementById('pdf-total-pendapatan').innerText = `Rp ${totalPendapatan.toLocaleString('id-ID')}`;
             
-            // Cek apakah lagi nge-filter tanggal atau semua
             let tglFilter = document.getElementById('input-tanggal').value;
             document.getElementById('pdf-tgl-laporan').innerText = tglFilter ? `Filter Tanggal: ${tglFilter}` : `Laporan Semua Waktu`;
 
-            // Aktifkan mode print PDF
-            document.body.classList.add('print-mode-rekapan');
-            document.getElementById('area-pdf-rekapan').classList.remove('hidden');
+            const elemenPDF = document.getElementById('area-pdf-rekapan');
+            elemenPDF.classList.remove('hidden');
 
-            // Eksekusi Print (Bisa di-Save as PDF di HP)
-            window.print();
+            setTimeout(() => {
+                var opsiPrint = {
+                  margin:       0.5,
+                  filename:     'Laporan_Jaja_Ibuk.pdf',
+                  image:        { type: 'jpeg', quality: 0.98 },
+                  html2canvas:  { scale: 2 },
+                  jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
 
-            // Tahan napas, balikin ke normal
-            setTimeout(function() {
-                document.body.classList.remove('print-mode-rekapan');
-                document.getElementById('area-pdf-rekapan').classList.add('hidden');
-            }, 1500);
+                html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => {
+                    elemenPDF.classList.add('hidden'); 
+                });
+            }, 300); 
         }
 
         function renderKeLayar(data) {
@@ -264,9 +260,13 @@
             data.forEach(jaja => {
                 const wadah = document.createElement('div');
                 wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
+                
+                // TOMBOL EDIT & HAPUS MENU
                 wadah.innerHTML = `
+                    <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
+                            class="absolute top-1 right-8 text-blue-400 font-bold text-sm p-1 active:text-blue-600 transition" title="Edit Menu">✏️</button>
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">✖</button>
+                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition" title="Hapus Menu">✖</button>
                     <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
                         <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
                         <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
@@ -303,6 +303,24 @@
             }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
         }
 
+        // FUNGSI EDIT MENU
+        function editMenuDariDatabase(id, namaLama, hargaLama) {
+            let namaBaru = prompt("Edit nama Jaja:", namaLama);
+            if (namaBaru === null || namaBaru.trim() === "") return;
+            
+            let hargaBaru = prompt("Edit harga " + namaBaru + ":", hargaLama);
+            if (hargaBaru === null || isNaN(hargaBaru) || hargaBaru.trim() === "") return;
+
+            fetch('/api/products/' + id, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ Nama_Jaja: namaBaru, Harga: parseInt(hargaBaru) })
+            }).then(res => res.json()).then(data => { 
+                alert(data.pesan); 
+                muatMenu(); 
+            });
+        }
+
         function hapusMenuDariDatabase(id, nama) {
             let konfirmasi = confirm(`Yakin ingin menghapus menu "${nama}"?`);
             if (konfirmasi) {
@@ -322,6 +340,20 @@
             renderKeranjang();
         }
 
+        // FUNGSI EDIT JUMLAH DI KERANJANG
+        function ubahQtyKeranjang(id) {
+            let barang = keranjang.find(item => item.id === id);
+            if (barang) {
+                let qtyBaru = prompt(`Masukkan jumlah untuk ${barang.nama}:`, barang.qty);
+                if (qtyBaru !== null && !isNaN(qtyBaru) && qtyBaru > 0) {
+                    barang.qty = parseInt(qtyBaru);
+                    renderKeranjang();
+                } else if (qtyBaru == "0") {
+                    hapusDariKeranjang(id);
+                }
+            }
+        }
+
         function renderKeranjang() {
             const daftar = document.getElementById('daftar-keranjang');
             const teksTotal = document.getElementById('total-harga');
@@ -334,7 +366,11 @@
                 daftar.innerHTML += `
                     <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
                         <div class="flex justify-between items-center w-full">
-                            <div><span class="font-semibold text-slate-800 print:text-black">${item.nama}</span><span class="text-sm text-slate-500 ml-2 print:hidden">x${item.qty}</span></div>
+                            <div>
+                                <span class="font-semibold text-slate-800 print:text-black">${item.nama}</span>
+                                <span class="hidden print:inline text-sm text-slate-500 ml-2">x${item.qty}</span>
+                                <button onclick="ubahQtyKeranjang(${item.id})" class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 font-bold print:hidden active:bg-blue-200">Qty: ${item.qty} ✎</button>
+                            </div>
                             <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">✖</button></div>
                         </div>
                         <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.qty} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
@@ -379,7 +415,6 @@
                     document.getElementById('struk-tanggal').innerText = res.tanggal;
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                     
-                    // Aktifkan mode struk
                     document.body.classList.add('print-mode-struk');
                     window.print(); 
                     
@@ -406,7 +441,7 @@
                     return trx;
                 }).reverse(); 
                 
-                dataRekapanSaatIni = semuaTransaksi; // Simpan memori awal untuk PDF
+                dataRekapanSaatIni = semuaTransaksi; 
                 tampilkanListRekapan(dataRekapanSaatIni); 
             });
         }
@@ -424,7 +459,7 @@
                 return matchNama && matchTgl;
             });
 
-            dataRekapanSaatIni = dataTerfilter; // Update memori PDF biar ngikutin filter
+            dataRekapanSaatIni = dataTerfilter; 
             tampilkanListRekapan(dataRekapanSaatIni); 
         }
 
@@ -514,7 +549,6 @@
             });
             document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
 
-            // Aktifkan mode struk
             document.body.classList.add('print-mode-struk');
             window.print();
 

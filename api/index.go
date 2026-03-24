@@ -95,6 +95,17 @@ func init() {
 		}
 	})
 
+	// FITUR BARU: UPDATE (EDIT) MENU
+	r.PUT("/api/products/:id", func(c *gin.Context) {
+		database := c.MustGet("db").(*gorm.DB)
+		id := c.Param("id")
+		var updateProduct Product
+		if err := c.ShouldBindJSON(&updateProduct); err == nil {
+			database.Model(&Product{}).Where("id_jaja = ?", id).Updates(Product{Nama_Jaja: updateProduct.Nama_Jaja, Harga: updateProduct.Harga})
+			c.JSON(200, gin.H{"pesan": "Menu berhasil diedit!"})
+		}
+	})
+
 	r.DELETE("/api/products/:id", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
@@ -138,7 +149,6 @@ func init() {
 		c.JSON(200, gin.H{"data": details})
 	})
 
-	// FITUR HAPUS TRANSAKSI BERSERTA DETAILNYA
 	r.DELETE("/api/transactions/:id", func(c *gin.Context) {
 		database := c.MustGet("db").(*gorm.DB)
 		id := c.Param("id")
