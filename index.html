@@ -11,11 +11,6 @@
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
             body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
-            
-            body.print-mode-rekapan * { visibility: hidden; }
-            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
-            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
             .print\:hidden { display: none !important; }
         }
     </style>
@@ -32,13 +27,16 @@
 
     <div>
         <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-10 print:hidden flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wide">Web Kasir</h1>
-            <div class="flex gap-2">
-                <button onclick="tambahPengeluaran()" class="bg-rose-600 border border-rose-500 px-3 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
+            <h1 class="text-lg font-bold tracking-wide">Web Kasir</h1>
+            <div class="flex gap-1.5">
+                <button onclick="bukaInputPengeluaran()" class="bg-rose-600 border border-rose-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
                     💸 Keluar
                 </button>
-                <button onclick="bukaRekapan()" class="bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold active:bg-slate-600 shadow transition flex items-center gap-1">
+                <button onclick="bukaRekapan()" class="bg-slate-600 border border-slate-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-slate-700 shadow transition flex items-center gap-1">
                     📈 Rekap
+                </button>
+                <button onclick="bukaLabaRugi()" class="bg-blue-600 border border-blue-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-blue-700 shadow transition flex items-center gap-1">
+                    📊 Laba
                 </button>
             </div>
         </div>
@@ -92,11 +90,47 @@
         Web App Kasir by <span class="font-semibold text-slate-500">starlight.dev</span>
     </div>
 
+    <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
+        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
+            <h2 class="font-bold text-lg text-slate-800 text-center mb-3">Konfirmasi Pesanan</h2>
+            <div class="text-sm text-slate-600 mb-2 border-b border-slate-200 pb-2">
+                Pelanggan: <span id="konfirm-nama" class="font-bold text-slate-800"></span>
+            </div>
+            <ul id="konfirm-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto text-sm"></ul>
+            <div class="flex justify-between items-center font-bold text-lg text-slate-800 border-t border-slate-200 pt-2 mb-5">
+                <span>Total:</span><span id="konfirm-total" class="text-emerald-600">Rp 0</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="tutupKonfirmasi()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
+                <button onclick="prosesSimpanFinal()" class="w-1/2 bg-emerald-600 text-white font-bold p-3 rounded-xl active:bg-emerald-700 transition">Ya, Simpan!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pengeluaran" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
+        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
+            <h2 class="font-bold text-xl text-rose-600 text-center mb-4">Catat Pengeluaran</h2>
+            
+            <label class="block text-slate-600 font-bold mb-1 text-sm">Beli apa? (Keterangan)</label>
+            <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli Es Batu, Mika..." onkeypress="if(event.key === 'Enter') this.blur();"
+                class="w-full p-3 rounded-xl border border-slate-300 mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
+
+            <label class="block text-slate-600 font-bold mb-1 text-sm">Berapa harganya? (Rp)</label>
+            <input type="number" id="input-nom-pengeluaran" placeholder="Misal: 15000" onkeypress="if(event.key === 'Enter') this.blur();"
+                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
+
+            <div class="flex gap-3">
+                <button onclick="tutupInputPengeluaran()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
+                <button onclick="simpanPengeluaranFinal()" class="w-1/2 bg-rose-600 text-white font-bold p-3 rounded-xl active:bg-rose-700 transition">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
         <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[85vh] flex flex-col shadow-2xl relative">
             <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
             
-            <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Keuangan</h2>
+            <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
 
             <div class="flex gap-1 mb-3 border-b-2 border-slate-100">
                 <button id="tab-pemasukan" onclick="gantiTab('pemasukan')" class="flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition">Pemasukan</button>
@@ -104,8 +138,8 @@
             </div>
 
             <div class="flex gap-2 mb-3">
-                <input type="text" id="input-cari" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="Cari nama / keterangan..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
-                <input type="date" id="input-tanggal" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+                <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="Cari nama / ket..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm w-1/2">
+                <input type="date" id="input-tanggal-rekap" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm w-1/2">
             </div>
 
             <div id="area-list-pemasukan" class="overflow-y-auto flex-1">
@@ -116,24 +150,41 @@
                 <ul id="list-pengeluaran" class="space-y-2 text-sm"></ul>
             </div>
 
-            <div class="mt-4 border-t border-slate-200 pt-3 text-sm">
-                <div class="flex justify-between mb-1">
-                    <span class="text-slate-600">Pemasukan:</span>
-                    <span class="font-bold text-emerald-600" id="total-semua-rekapan">Rp 0</span>
-                </div>
-                <div class="flex justify-between mb-2">
-                    <span class="text-slate-600">Pengeluaran:</span>
-                    <span class="font-bold text-rose-500" id="total-semua-pengeluaran">Rp 0</span>
-                </div>
-                <div class="flex justify-between border-t border-slate-200 pt-2 items-center">
-                    <span class="font-bold text-slate-800 text-base">Bersih (Laba):</span>
-                    <span class="font-extrabold text-blue-600 text-xl" id="total-bersih">Rp 0</span>
-                </div>
-                
-                <button onclick="cetakPDF()" class="w-full mt-4 bg-blue-600 text-white font-bold py-2 rounded-xl active:bg-blue-700 shadow transition flex justify-center items-center gap-2">
-                    📄 Unduh Laporan PDF
-                </button>
+            <div class="mt-4 border-t border-slate-200 pt-4 flex justify-between items-center">
+                <span class="text-slate-600 font-bold" id="label-footer-rekap">Total Pemasukan:</span>
+                <span class="font-extrabold text-emerald-600 text-xl" id="angka-footer-rekap">Rp 0</span>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
+        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
+            <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
+            <h2 class="font-bold text-xl text-slate-800 text-center mb-5 border-b pb-3">Dashboard Laba Rugi</h2>
+            
+            <div class="mb-5 text-center">
+                <label class="text-xs font-bold text-slate-500 block mb-1">Filter Tanggal Laporan:</label>
+                <input type="date" id="input-tanggal-laba" onchange="hitungLabaRugi()" class="p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full text-center">
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex justify-between items-center">
+                    <span class="font-bold text-emerald-700">Total Pemasukan</span>
+                    <span class="font-extrabold text-emerald-600 text-lg" id="laba-pemasukan">Rp 0</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex justify-between items-center">
+                    <span class="font-bold text-rose-700">Total Pengeluaran</span>
+                    <span class="font-extrabold text-rose-600 text-lg" id="laba-pengeluaran">Rp 0</span>
+                </div>
+                <div class="bg-blue-50 border border-blue-300 p-4 rounded-xl flex justify-between items-center mt-2 shadow-sm">
+                    <span class="font-black text-blue-900 text-lg">LABA BERSIH</span>
+                    <span class="font-black text-blue-700 text-2xl" id="laba-bersih">Rp 0</span>
+                </div>
+            </div>
+
+            <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
+                📄 Unduh Laporan PDF
+            </button>
         </div>
     </div>
 
@@ -156,19 +207,19 @@
         </div>
     </div>
 
-    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[800px] z-[-50]">
-        <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Keuangan (GINA & ULI)</h2>
-        <p id="pdf-tgl-laporan" class="mb-6 text-center text-sm font-semibold mt-2"></p>
+    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[1100px] z-[99999] shadow-2xl">
+        <h2 class="text-3xl font-bold mb-1 text-center border-b-4 border-black pb-3">Laporan Keuangan (GINA & ULI)</h2>
+        <p id="pdf-tgl-laporan" class="mb-6 text-center text-base font-semibold mt-3"></p>
         
-        <div class="flex gap-6">
+        <div class="flex gap-8">
             <div class="flex-1">
-                <h3 class="font-bold text-emerald-700 border-b border-emerald-700 mb-2">1. PEMASUKAN</h3>
-                <table class="w-full text-left border-collapse mb-4 text-xs">
+                <h3 class="font-bold text-emerald-700 border-b-2 border-emerald-700 mb-3 text-lg">1. PEMASUKAN</h3>
+                <table class="w-full text-left border-collapse mb-4 text-sm">
                     <thead>
-                        <tr class="border-b border-black">
-                            <th class="py-1">Nota</th>
-                            <th class="py-1">Pelanggan</th>
-                            <th class="py-1 text-right">Total</th>
+                        <tr class="border-b-2 border-black">
+                            <th class="py-2 pl-2">Nota</th>
+                            <th class="py-2">Pelanggan</th>
+                            <th class="py-2 text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody id="pdf-tbody-pemasukan"></tbody>
@@ -176,13 +227,13 @@
             </div>
 
             <div class="flex-1">
-                <h3 class="font-bold text-rose-700 border-b border-rose-700 mb-2">2. PENGELUARAN</h3>
-                <table class="w-full text-left border-collapse mb-4 text-xs">
+                <h3 class="font-bold text-rose-700 border-b-2 border-rose-700 mb-3 text-lg">2. PENGELUARAN</h3>
+                <table class="w-full text-left border-collapse mb-4 text-sm">
                     <thead>
-                        <tr class="border-b border-black">
-                            <th class="py-1">Tanggal</th>
-                            <th class="py-1">Keterangan</th>
-                            <th class="py-1 text-right">Total</th>
+                        <tr class="border-b-2 border-black">
+                            <th class="py-2 pl-2">Tanggal</th>
+                            <th class="py-2">Keterangan</th>
+                            <th class="py-2 text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody id="pdf-tbody-pengeluaran"></tbody>
@@ -190,10 +241,10 @@
             </div>
         </div>
         
-        <div class="border-t-4 border-black pt-4 mt-4 w-full flex flex-col items-end text-sm">
-            <div class="w-1/2 flex justify-between mb-1"><span class="font-semibold text-emerald-700">Total Pemasukan:</span> <span id="pdf-total-in" class="font-bold">Rp 0</span></div>
-            <div class="w-1/2 flex justify-between mb-2"><span class="font-semibold text-rose-700">Total Pengeluaran:</span> <span id="pdf-total-out" class="font-bold">Rp 0</span></div>
-            <div class="w-1/2 flex justify-between border-t border-black pt-2"><span class="font-bold text-lg">Laba Bersih:</span> <span id="pdf-laba" class="font-bold text-xl text-blue-700">Rp 0</span></div>
+        <div class="border-t-4 border-black pt-4 mt-4 w-full flex flex-col items-end text-base">
+            <div class="w-1/2 flex justify-between mb-2"><span class="font-semibold text-emerald-700">Total Pemasukan:</span> <span id="pdf-total-in" class="font-bold">Rp 0</span></div>
+            <div class="w-1/2 flex justify-between mb-3"><span class="font-semibold text-rose-700">Total Pengeluaran:</span> <span id="pdf-total-out" class="font-bold">Rp 0</span></div>
+            <div class="w-1/2 flex justify-between border-t-2 border-black pt-3"><span class="font-bold text-xl">Laba Bersih:</span> <span id="pdf-laba" class="font-extrabold text-2xl text-blue-700">Rp 0</span></div>
         </div>
     </div>
 
@@ -205,6 +256,8 @@
         let dataPengeluaranSaatIni = []; 
         let detailTrxSaatIni = null; 
         let tabAktif = 'pemasukan';
+        let globalTotalPemasukan = 0;
+        let globalTotalPengeluaran = 0;
         const PIN_RAHASIA = "2222"; 
 
         function formatTanggalCantik(tglString) {
@@ -226,33 +279,38 @@
             return `${thn}-${bln}-${hari}`; 
         }
 
-        function formatNota(num) {
-            return "INV-" + String(num).padStart(4, '0');
-        }
+        function formatNota(num) { return "INV-" + String(num).padStart(4, '0'); }
 
         function cekPinOtomatis() {
             const inputField = document.getElementById('input-pin');
             const pin = inputField.value;
-
             if (pin.length === PIN_RAHASIA.length) {
                 inputField.blur();
                 if(pin === PIN_RAHASIA) { 
                     document.getElementById('layar-login').classList.add('hidden');
-                    muatMenu(); 
-                    inputField.value = ''; 
-                } else {
-                    alert("PIN Salah! Coba lagi.");
-                    inputField.value = ''; 
-                }
+                    muatMenu(); inputField.value = ''; 
+                } else { alert("PIN Salah! Coba lagi."); inputField.value = ''; }
             }
         }
 
-        function tambahPengeluaran() {
+        // --- FUNGSI INPUT PENGELUARAN BARU (PAKAI MODAL CAKEP) ---
+        function bukaInputPengeluaran() {
+            document.getElementById('modal-pengeluaran').classList.remove('hidden');
+            document.getElementById('input-ket-pengeluaran').value = '';
+            document.getElementById('input-nom-pengeluaran').value = '';
+        }
+
+        function tutupInputPengeluaran() {
+            document.getElementById('modal-pengeluaran').classList.add('hidden');
+        }
+
+        function simpanPengeluaranFinal() {
             if (document.activeElement) document.activeElement.blur(); 
-            let ket = prompt("Keterangan pengeluaran (misal: Beli Mika, Es Batu):");
-            if (!ket || ket.trim() === "") return;
-            let nom = prompt("Nominal pengeluaran (misal: 25000):");
-            if (!nom || isNaN(nom) || nom.trim() === "") return;
+            let ket = document.getElementById('input-ket-pengeluaran').value;
+            let nom = document.getElementById('input-nom-pengeluaran').value;
+            
+            if (!ket || ket.trim() === "") { alert("Keterangan belum diisi!"); return; }
+            if (!nom || isNaN(nom) || nom.trim() === "") { alert("Nominal harus diisi angka!"); return; }
 
             fetch('/api/expenses', { 
                 method: 'POST', 
@@ -260,8 +318,10 @@
                 body: JSON.stringify({ keterangan: ket, nominal: parseInt(nom) })
             }).then(res => res.json()).then(data => { 
                 alert(data.pesan); 
+                tutupInputPengeluaran();
             });
         }
+        // --------------------------------------------------------
 
         function gantiTab(tabName) {
             tabAktif = tabName;
@@ -269,17 +329,28 @@
             const tabOut = document.getElementById('tab-pengeluaran');
             const areaIn = document.getElementById('area-list-pemasukan');
             const areaOut = document.getElementById('area-list-pengeluaran');
+            
+            const labelFooter = document.getElementById('label-footer-rekap');
+            const angkaFooter = document.getElementById('angka-footer-rekap');
 
             if(tabName === 'pemasukan') {
                 tabIn.className = "flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition";
                 tabOut.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
                 areaIn.classList.remove('hidden');
                 areaOut.classList.add('hidden');
+                
+                labelFooter.innerText = "Total Pemasukan:";
+                angkaFooter.className = "font-extrabold text-emerald-600 text-xl";
+                angkaFooter.innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
             } else {
                 tabOut.className = "flex-1 font-bold pb-2 text-rose-500 border-b-2 border-rose-500 transition";
                 tabIn.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
                 areaOut.classList.remove('hidden');
                 areaIn.classList.add('hidden');
+
+                labelFooter.innerText = "Total Pengeluaran:";
+                angkaFooter.className = "font-extrabold text-rose-600 text-xl";
+                angkaFooter.innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
             }
         }
 
@@ -449,32 +520,79 @@
             });
         }
 
+        // --- FUNGSI LABA RUGI BARU ---
+        function bukaLabaRugi() {
+            document.getElementById('modal-laba').classList.remove('hidden');
+            document.getElementById('input-tanggal-laba').value = '';
+            hitungLabaRugi(); // Hitung semuanya pas baru buka
+        }
+
+        function tutupLabaRugi() { document.getElementById('modal-laba').classList.add('hidden'); }
+
+        function hitungLabaRugi() {
+            let filterTgl = document.getElementById('input-tanggal-laba').value;
+            let totalIn = 0; let totalOut = 0;
+
+            // Fetch ulang biar datanya paling update
+            fetch('/api/transactions').then(res => res.json()).then(resTrx => {
+                let trxFiltered = resTrx.data;
+                if(filterTgl) {
+                    trxFiltered = trxFiltered.filter(t => formatTanggalUntukFilter(t.tanggal_transaksi) === filterTgl);
+                }
+                trxFiltered.forEach(t => totalIn += t.total_belanja);
+                document.getElementById('laba-pemasukan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
+                
+                // Fetch Pengeluaran
+                fetch('/api/expenses').then(res => res.json()).then(resExp => {
+                    let expFiltered = resExp.data;
+                    if(filterTgl) {
+                        expFiltered = expFiltered.filter(e => formatTanggalUntukFilter(e.tanggal) === filterTgl);
+                    }
+                    expFiltered.forEach(e => totalOut += e.nominal);
+                    document.getElementById('laba-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
+
+                    // Update Bersih
+                    let bersih = totalIn - totalOut;
+                    document.getElementById('laba-bersih').innerText = `Rp ${bersih.toLocaleString('id-ID')}`;
+                    if(bersih < 0) { document.getElementById('laba-bersih').className = "font-black text-rose-600 text-2xl"; } 
+                    else { document.getElementById('laba-bersih').className = "font-black text-blue-700 text-2xl"; }
+
+                    // Simpan data rekapan buat dicetak PDF
+                    dataRekapanSaatIni = trxFiltered;
+                    dataPengeluaranSaatIni = expFiltered;
+                    // Kasih nomor urut biar cantik di PDF
+                    dataRekapanSaatIni.reverse().forEach((t, idx) => t.nomor_urut = idx + 1);
+                    dataRekapanSaatIni.reverse();
+                });
+            });
+        }
+        // ------------------------------
+
         function bukaRekapan() {
             document.getElementById('modal-rekapan').classList.remove('hidden');
             document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
             document.getElementById('list-pengeluaran').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
-            document.getElementById('input-cari').value = ''; 
-            document.getElementById('input-tanggal').value = ''; 
+            document.getElementById('input-cari-rekap').value = ''; 
+            document.getElementById('input-tanggal-rekap').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
                 let dataUrut = res.data.sort((a, b) => a.id - b.id);
                 semuaTransaksi = dataUrut.map((trx, index) => { trx.nomor_urut = index + 1; return trx; }).reverse(); 
                 dataRekapanSaatIni = semuaTransaksi; 
-                filterRekapan();
-            });
-
-            fetch('/api/expenses').then(res => res.json()).then(res => {
-                semuaPengeluaran = res.data;
-                dataPengeluaranSaatIni = semuaPengeluaran;
-                filterRekapan();
+                
+                fetch('/api/expenses').then(res2 => res2.json()).then(res2 => {
+                    semuaPengeluaran = res2.data;
+                    dataPengeluaranSaatIni = semuaPengeluaran;
+                    filterRekapan();
+                });
             });
         }
 
         function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
 
         function filterRekapan() {
-            let kataKunci = document.getElementById('input-cari').value.toLowerCase();
-            let filterTgl = document.getElementById('input-tanggal').value; 
+            let kataKunci = document.getElementById('input-cari-rekap').value.toLowerCase();
+            let filterTgl = document.getElementById('input-tanggal-rekap').value; 
             
             dataRekapanSaatIni = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
@@ -482,7 +600,6 @@
                 return matchNama && matchTgl;
             });
 
-            // INI DIA YANG TADI TYPO (trx.tanggal jadi exp.tanggal)
             dataPengeluaranSaatIni = semuaPengeluaran.filter(exp => {
                 let matchKet = exp.keterangan.toLowerCase().includes(kataKunci);
                 let matchTgl = filterTgl ? (formatTanggalUntukFilter(exp.tanggal) === filterTgl) : true;
@@ -493,8 +610,8 @@
         }
 
         function tampilkanLayarKeuangan() {
-            let htmlIn = ''; let totalIn = 0;
-            let htmlOut = ''; let totalOut = 0;
+            let htmlIn = ''; globalTotalPemasukan = 0;
+            let htmlOut = ''; globalTotalPengeluaran = 0;
 
             if (dataRekapanSaatIni.length === 0) { htmlIn = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
             dataRekapanSaatIni.forEach(trx => {
@@ -509,10 +626,9 @@
                     </div>
                     <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">✖</button>
                 </li>`;
-                totalIn += trx.total_belanja;
+                globalTotalPemasukan += trx.total_belanja;
             });
             document.getElementById('list-rekapan').innerHTML = htmlIn;
-            document.getElementById('total-semua-rekapan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
 
             if (dataPengeluaranSaatIni.length === 0) { htmlOut = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
             dataPengeluaranSaatIni.forEach(exp => {
@@ -527,15 +643,12 @@
                     </div>
                     <button onclick="hapusPengeluaran(${exp.id}, '${exp.keterangan}')" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Bon">✖</button>
                 </li>`;
-                totalOut += exp.nominal;
+                globalTotalPengeluaran += exp.nominal;
             });
             document.getElementById('list-pengeluaran').innerHTML = htmlOut;
-            document.getElementById('total-semua-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
 
-            let bersih = totalIn - totalOut;
-            document.getElementById('total-bersih').innerText = `Rp ${bersih.toLocaleString('id-ID')}`;
-            if(bersih < 0) { document.getElementById('total-bersih').className = "font-extrabold text-rose-600 text-xl"; } 
-            else { document.getElementById('total-bersih').className = "font-extrabold text-blue-600 text-xl"; }
+            // Trigger update UI sesuai tab yang aktif
+            gantiTab(tabAktif);
         }
 
         function hapusTransaksi(id, nomor_urut) {
@@ -610,9 +723,10 @@
             tbIn.innerHTML = ''; tbOut.innerHTML = '';
             let tIn = 0; let tOut = 0;
 
+            // Cetak data rekapan yang udah kefilter di menu Laba Rugi
             dataRekapanSaatIni.forEach(trx => {
                 tbIn.innerHTML += `<tr class="border-b border-gray-300">
-                    <td class="py-1 pl-1">${formatNota(trx.nomor_urut)}</td><td class="py-1">${trx.nama_pembeli}</td><td class="py-1 pr-1 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                    <td class="py-1 pl-1">${formatNota(trx.nomor_urut || 0)}</td><td class="py-1">${trx.nama_pembeli}</td><td class="py-1 pr-1 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
                 </tr>`;
                 tIn += trx.total_belanja;
             });
@@ -630,16 +744,17 @@
             let laba = tIn - tOut;
             document.getElementById('pdf-laba').innerText = `Rp ${laba.toLocaleString('id-ID')}`;
 
-            let tglFilter = document.getElementById('input-tanggal').value;
+            let tglFilter = document.getElementById('input-tanggal-laba').value;
             document.getElementById('pdf-tgl-laporan').innerText = tglFilter ? `Filter Tanggal: ${tglFilter}` : `Semua Waktu`;
 
             const elemenPDF = document.getElementById('area-pdf-rekapan');
             elemenPDF.classList.remove('hidden');
+            window.scrollTo(0, 0); 
 
             setTimeout(() => {
-                var opsiPrint = { margin: 0.3, filename: 'Laporan_Keuangan_Ibuk.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
+                var opsiPrint = { margin: 0.3, filename: 'Laporan_Keuangan_Ibuk.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, windowWidth: 1100 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
                 html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => { elemenPDF.classList.add('hidden'); });
-            }, 300); 
+            }, 800); 
         }
     </script>
 </body>
