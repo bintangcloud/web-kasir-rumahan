@@ -35,7 +35,7 @@
 
         <div class="p-4 max-w-md mx-auto">
             <label for="nama-pembeli" class="block text-slate-600 font-bold mb-1 ml-1 print:hidden text-sm">Nama Pelanggan:</label>
-            <input type="text" id="nama-pembeli" placeholder="Ketik nama di sini..." 
+            <input type="text" id="nama-pembeli" placeholder="Ketik nama di sini..." onkeypress="if(event.key === 'Enter') this.blur();"
                 class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg print:hidden">
 
             <div class="flex justify-between items-center mb-3 print:hidden">
@@ -112,7 +112,7 @@
             </div>
 
             <div class="flex gap-2 mb-4">
-                <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+                <input type="text" id="input-cari" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="Cari nama..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
                 <input type="date" id="input-tanggal" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
             </div>
 
@@ -205,6 +205,9 @@
             const pin = inputField.value;
 
             if (pin.length === PIN_RAHASIA.length) {
+                // JURUS BLUR: Nendang keyboard biar langsung turun!
+                inputField.blur();
+                
                 if(pin === PIN_RAHASIA) { 
                     document.getElementById('layar-login').classList.add('hidden');
                     muatMenu(); 
@@ -264,9 +267,7 @@
             tempatJaja.innerHTML = ''; 
             data.forEach(jaja => {
                 const wadah = document.createElement('div');
-                // TAMBAHIN ID UNTUK KOTAK MENU BIAR BISA DIKASIH ANIMASI KEDIP
                 wadah.id = 'menu-kotak-' + jaja.Id_Jaja; 
-                // TAMBAHIN border-2, transition-all dan duration-150 biar animasinya mulus
                 wadah.className = 'relative bg-white rounded-xl shadow-sm border-2 border-slate-200 transition-all duration-150 text-center flex flex-col items-center justify-center';
                 
                 wadah.innerHTML = `
@@ -302,6 +303,7 @@
         }
 
         function tambahMenu() {
+            if (document.activeElement) document.activeElement.blur(); // Usir keyboard
             let nama = prompt("Masukkan nama Jaja / Barang baru:");
             if (!nama) return;
             let harga = prompt("Masukkan harganya (angka saja, misal: 15000):");
@@ -311,6 +313,7 @@
         }
 
         function editMenuDariDatabase(id, namaLama, hargaLama) {
+            if (document.activeElement) document.activeElement.blur(); // Usir keyboard
             let namaBaru = prompt("Edit nama Jaja:", namaLama);
             if (namaBaru === null || namaBaru.trim() === "") return;
             
@@ -335,13 +338,14 @@
         }
 
         function tambahKeKeranjang(id, nama, harga) {
-            // EFEK VISUAL: KEDIP HIJAU BIAR KERASA KEPENCET
+            if (document.activeElement) document.activeElement.blur(); // Usir keyboard yg nyangkut
+            
             let kotakMenu = document.getElementById('menu-kotak-' + id);
             if (kotakMenu) {
                 kotakMenu.classList.add('bg-emerald-200', 'border-emerald-500', 'scale-95');
                 setTimeout(() => {
                     kotakMenu.classList.remove('bg-emerald-200', 'border-emerald-500', 'scale-95');
-                }, 150); // Kedip selama sepersekian detik
+                }, 150); 
             }
 
             let barangAda = keranjang.find(item => item.id === id);
@@ -356,6 +360,7 @@
         }
 
         function ubahQtyKeranjang(id) {
+            if (document.activeElement) document.activeElement.blur(); // Usir keyboard
             let barang = keranjang.find(item => item.id === id);
             if (barang) {
                 let qtyBaru = prompt(`Jumlah ${barang.nama} saat ini: ${barang.qty}\nMasukkan jumlah yang baru:`, "");
