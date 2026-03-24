@@ -6,10 +6,16 @@
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* CSS KHUSUS BUAT NGATUR 2 MODE PRINT (STRUK vs LAPORAN PDF) */
         @media print {
-            body * { visibility: hidden; }
-            #area-struk, #area-struk * { visibility: visible; }
-            #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; }
+            body.print-mode-struk * { visibility: hidden; }
+            body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
+            body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
+            
+            body.print-mode-rekapan * { visibility: hidden; }
+            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
+            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
+
             .print\:hidden { display: none !important; }
         }
     </style>
@@ -103,8 +109,8 @@
             <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
                 <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
                 <div class="flex items-center gap-2">
-                    <button onclick="exportKeExcel()" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-green-700 shadow flex items-center gap-1 transition">
-                        📥 Excel
+                    <button onclick="cetakPDF()" class="bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-red-700 shadow flex items-center gap-1 transition">
+                        📄 Cetak PDF
                     </button>
                     <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
                 </div>
@@ -146,9 +152,33 @@
         </div>
     </div>
 
+    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans">
+        <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Penjualan (GINA & ULI)</h2>
+        <p id="pdf-tgl-laporan" class="mb-4 text-center text-sm font-semibold mt-2"></p>
+        
+        <table class="w-full text-left border-collapse mb-6 text-sm">
+            <thead>
+                <tr class="border-b-2 border-black">
+                    <th class="py-2 pl-2">Nota</th>
+                    <th class="py-2">Pelanggan</th>
+                    <th class="py-2">Waktu</th>
+                    <th class="py-2 pr-2 text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-tbody">
+                </tbody>
+        </table>
+        
+        <div class="flex justify-between items-center border-t-2 border-black pt-2">
+            <span class="font-bold text-lg">Total Pendapatan:</span>
+            <span id="pdf-total-pendapatan" class="font-bold text-xl">Rp 0</span>
+        </div>
+    </div>
+
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
+        let dataRekapanSaatIni = []; // Nyimpen data khusus buat di-print PDF
         let detailTrxSaatIni = null; 
         const PIN_RAHASIA = "2222"; 
 
@@ -186,22 +216,46 @@
             }
         }
 
-        function exportKeExcel() {
-            if (semuaTransaksi.length === 0) { alert("Belum ada data penjualan!"); return; }
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "No Nota,Nama Pelanggan,Tanggal,Total Belanja (Rp)\n";
-            semuaTransaksi.forEach(function(trx) {
-                let tglExcel = formatTanggalCantik(trx.tanggal_transaksi);
-                let row = `${formatNota(trx.nomor_urut)},"${trx.nama_pembeli}",${tglExcel},${trx.total_belanja}`;
-                csvContent += row + "\n";
+        // FUNGSI BARU: CETAK PDF SEBAGAI PENGGANTI EXCEL
+        function cetakPDF() {
+            if (dataRekapanSaatIni.length === 0) { alert("Belum ada data penjualan untuk dicetak!"); return; }
+
+            const tbody = document.getElementById('pdf-tbody');
+            tbody.innerHTML = '';
+            let totalPendapatan = 0;
+
+            // Masukin data rekapan ke dalam tabel PDF
+            dataRekapanSaatIni.forEach(trx => {
+                let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-300">
+                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut)}</td>
+                        <td class="py-2">${trx.nama_pembeli}</td>
+                        <td class="py-2">${tglCantik}</td>
+                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+                totalPendapatan += trx.total_belanja;
             });
-            var encodedUri = encodeURI(csvContent);
-            var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Rekapan_Kasir_Ibuk.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+
+            document.getElementById('pdf-total-pendapatan').innerText = `Rp ${totalPendapatan.toLocaleString('id-ID')}`;
+            
+            // Cek apakah lagi nge-filter tanggal atau semua
+            let tglFilter = document.getElementById('input-tanggal').value;
+            document.getElementById('pdf-tgl-laporan').innerText = tglFilter ? `Filter Tanggal: ${tglFilter}` : `Laporan Semua Waktu`;
+
+            // Aktifkan mode print PDF
+            document.body.classList.add('print-mode-rekapan');
+            document.getElementById('area-pdf-rekapan').classList.remove('hidden');
+
+            // Eksekusi Print (Bisa di-Save as PDF di HP)
+            window.print();
+
+            // Tahan napas, balikin ke normal
+            setTimeout(function() {
+                document.body.classList.remove('print-mode-rekapan');
+                document.getElementById('area-pdf-rekapan').classList.add('hidden');
+            }, 1500);
         }
 
         function renderKeLayar(data) {
@@ -325,14 +379,16 @@
                     document.getElementById('struk-tanggal').innerText = res.tanggal;
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                     
+                    // Aktifkan mode struk
+                    document.body.classList.add('print-mode-struk');
                     window.print(); 
                     
-                    // JURUS TAHAN NAPAS BIAR HP SEMPAT NGEFOTO STRUK
                     setTimeout(function() {
+                        document.body.classList.remove('print-mode-struk');
                         keranjang = []; 
                         document.getElementById('nama-pembeli').value = ''; 
                         renderKeranjang();
-                    }, 1500); // Tunda 1,5 detik
+                    }, 1500); 
                 });
             });
         }
@@ -349,7 +405,9 @@
                     trx.nomor_urut = index + 1; 
                     return trx;
                 }).reverse(); 
-                tampilkanListRekapan(semuaTransaksi); 
+                
+                dataRekapanSaatIni = semuaTransaksi; // Simpan memori awal untuk PDF
+                tampilkanListRekapan(dataRekapanSaatIni); 
             });
         }
 
@@ -365,7 +423,9 @@
                 let matchTgl = filterTgl ? (tglTrxFilter === filterTgl) : true;
                 return matchNama && matchTgl;
             });
-            tampilkanListRekapan(dataTerfilter); 
+
+            dataRekapanSaatIni = dataTerfilter; // Update memori PDF biar ngikutin filter
+            tampilkanListRekapan(dataRekapanSaatIni); 
         }
 
         function tampilkanListRekapan(data) {
@@ -432,7 +492,6 @@
                 .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
-        // FITUR CETAK ULANG 
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
 
@@ -443,7 +502,6 @@
             const daftar = document.getElementById('daftar-keranjang');
             daftar.innerHTML = ''; 
             
-            // Layout ini buat diprint
             detailTrxSaatIni.items.forEach((item) => {
                 daftar.innerHTML += `
                     <li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
@@ -456,13 +514,14 @@
             });
             document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
 
-            // Gasss cetak!
+            // Aktifkan mode struk
+            document.body.classList.add('print-mode-struk');
             window.print();
 
-            // JURUS TAHAN NAPAS JUGA DI SINI BIAR HP AMAN
             setTimeout(function() {
+                document.body.classList.remove('print-mode-struk');
                 renderKeranjang();
-            }, 1500); // Tunda 1,5 detik
+            }, 1500); 
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
