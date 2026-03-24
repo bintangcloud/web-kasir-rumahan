@@ -141,7 +141,7 @@
             </div>
             
             <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
-                Cetak Ulang Nota
+                🖨️ Cetak Ulang Nota
             </button>
         </div>
     </div>
@@ -326,7 +326,13 @@
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                     
                     window.print(); 
-                    keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+                    
+                    // JURUS TAHAN NAPAS BIAR HP SEMPAT NGEFOTO STRUK
+                    setTimeout(function() {
+                        keranjang = []; 
+                        document.getElementById('nama-pembeli').value = ''; 
+                        renderKeranjang();
+                    }, 1500); // Tunda 1,5 detik
                 });
             });
         }
@@ -453,8 +459,10 @@
             // Gasss cetak!
             window.print();
 
-            // Selesai cetak, balikin layarnya ke mode keranjang jualan saat ini
-            renderKeranjang();
+            // JURUS TAHAN NAPAS JUGA DI SINI BIAR HP AMAN
+            setTimeout(function() {
+                renderKeranjang();
+            }, 1500); // Tunda 1,5 detik
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
