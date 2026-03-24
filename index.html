@@ -170,7 +170,6 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
@@ -265,13 +264,16 @@
             tempatJaja.innerHTML = ''; 
             data.forEach(jaja => {
                 const wadah = document.createElement('div');
-                wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
+                // TAMBAHIN ID UNTUK KOTAK MENU BIAR BISA DIKASIH ANIMASI KEDIP
+                wadah.id = 'menu-kotak-' + jaja.Id_Jaja; 
+                // TAMBAHIN border-2, transition-all dan duration-150 biar animasinya mulus
+                wadah.className = 'relative bg-white rounded-xl shadow-sm border-2 border-slate-200 transition-all duration-150 text-center flex flex-col items-center justify-center';
                 
                 wadah.innerHTML = `
                     <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
-                            class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition" title="Edit Menu">✏️</button>
+                            class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition z-10" title="Edit Menu">✏️</button>
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition" title="Hapus Menu">✖</button>
+                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition z-10" title="Hapus Menu">✖</button>
                     <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-2 pt-8 pb-3">
                         <div class="font-bold text-slate-800 text-sm leading-tight">${jaja.Nama_Jaja}</div>
                         <div class="text-emerald-600 font-bold text-xs mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
@@ -333,6 +335,15 @@
         }
 
         function tambahKeKeranjang(id, nama, harga) {
+            // EFEK VISUAL: KEDIP HIJAU BIAR KERASA KEPENCET
+            let kotakMenu = document.getElementById('menu-kotak-' + id);
+            if (kotakMenu) {
+                kotakMenu.classList.add('bg-emerald-200', 'border-emerald-500', 'scale-95');
+                setTimeout(() => {
+                    kotakMenu.classList.remove('bg-emerald-200', 'border-emerald-500', 'scale-95');
+                }, 150); // Kedip selama sepersekian detik
+            }
+
             let barangAda = keranjang.find(item => item.id === id);
             if (barangAda) barangAda.qty += 1;
             else keranjang.push({ id: id, nama: nama, harga: harga, qty: 1 });
