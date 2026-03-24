@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* TENDANG PANAH DI INPUT ANGKA (Request Ibuk) */
         input[type="number"]::-webkit-outer-spin-button, 
@@ -17,11 +16,20 @@
             -moz-appearance: textfield;
         }
 
-        /* MODE PRINT KHUSUS STRUK DAN PDF */
+        /* MODE PRINT KHUSUS STRUK DAN PDF (Sekarang ada 3 mode) */
         @media print {
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
             body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
+            
+            body.print-mode-rekapan * { visibility: hidden; }
+            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
+            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
+
+            body.print-mode-single * { visibility: hidden; }
+            body.print-mode-single #area-pdf-single, body.print-mode-single #area-pdf-single * { visibility: visible; }
+            body.print-mode-single #area-pdf-single { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
+
             .print\:hidden { display: none !important; }
         }
     </style>
@@ -176,7 +184,7 @@
             </div>
 
             <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
-                📄 Unduh Laporan (Tab Pemasukan)
+                🖨️ Cetak Laporan (Pemasukan)
             </button>
         </div>
     </div>
@@ -213,7 +221,7 @@
             </div>
 
             <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
-                📄 Unduh Laporan Lengkap PDF
+                🖨️ Cetak Laporan Keuangan
             </button>
         </div>
     </div>
@@ -237,7 +245,7 @@
         </div>
     </div>
 
-    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[1100px] z-[99999] shadow-2xl">
+    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-full z-[-50]">
         <h2 class="text-3xl font-bold mb-1 text-center border-b-4 border-black pb-3">Laporan Keuangan (GINA & ULI)</h2>
         <p id="pdf-tgl-laporan" class="mb-6 text-center text-base font-semibold mt-3"></p>
         
@@ -278,7 +286,7 @@
         </div>
     </div>
 
-    <div id="area-pdf-single" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-[800px] z-[99999] shadow-2xl">
+    <div id="area-pdf-single" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-full z-[-50]">
         <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2" id="pdf-single-title">Laporan</h2>
         <p id="pdf-single-tgl" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         <table class="w-full text-left border-collapse mb-6 text-sm">
@@ -326,7 +334,6 @@
 
         function formatNota(num) { return "INV-" + String(num).padStart(4, '0'); }
 
-        // FUNGSI LOGIKA RENTANG WAKTU
         function isTanggalSesuai(tglItem, start, end) {
             if (!start && !end) return true;
             if (start && !end) return tglItem >= start;
@@ -392,7 +399,7 @@
                 angkaFooter.innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
                 
                 btnUnduh.className = "w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "📄 Unduh Laporan (Tab Pemasukan)";
+                btnUnduh.innerText = "🖨️ Cetak Laporan (Pemasukan)";
             } else {
                 tabOut.className = "flex-1 font-bold pb-2 text-rose-500 border-b-2 border-rose-500 transition";
                 tabIn.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
@@ -404,7 +411,7 @@
                 angkaFooter.innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
 
                 btnUnduh.className = "w-full mt-3 bg-rose-600 text-white font-bold py-2.5 rounded-xl active:bg-rose-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "📄 Unduh Laporan (Tab Pengeluaran)";
+                btnUnduh.innerText = "🖨️ Cetak Laporan (Pengeluaran)";
             }
         }
 
@@ -552,7 +559,6 @@
 
         function tutupKonfirmasi() { document.getElementById('modal-konfirmasi').classList.add('hidden'); }
 
-        // FUNGSI SIMPAN STRUK DIPERKUAT (ANTI-GAGAL)
         function prosesSimpanFinal() {
             const nama = document.getElementById('nama-pembeli').value;
             let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
@@ -561,8 +567,6 @@
             }).then(res => res.json()).then(res => {
                 
                 tutupKonfirmasi();
-                
-                // Minta ulang data cuma buat nomor nota
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
                     let totalTransaksi = rData.data ? rData.data.length : res.id_nota; 
                     
@@ -578,7 +582,6 @@
                         keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
                     }, 1500); 
                 }).catch(e => {
-                    // JALUR DARURAT KALAU INTERNET LEMOT
                     document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota || 999);
                     document.getElementById('struk-tanggal').innerText = res.tanggal || formatTanggalCantik(new Date().toISOString());
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
@@ -594,7 +597,6 @@
             }).catch(e => { alert("Gagal menyimpan pesanan. Cek koneksi server!"); });
         }
 
-        // --- DASHBOARD LABA RUGI (RENTANG TANGGAL) ---
         function bukaLabaRugi() {
             document.getElementById('modal-laba').classList.remove('hidden');
             document.getElementById('input-tgl-mulai-laba').value = '';
@@ -631,7 +633,6 @@
                 });
             });
         }
-        // ------------------------------
 
         function bukaRekapan() {
             document.getElementById('modal-rekapan').classList.remove('hidden');
@@ -790,7 +791,7 @@
             return `Semua Waktu`;
         }
 
-        // FUNGSI UNDUH PDF LABA RUGI (LENGKAP 2 TABEL)
+        // --- FUNGSI PRINT (KEMBALI KE BAWAAN HP) ---
         function cetakPDF() {
             const tbIn = document.getElementById('pdf-tbody-pemasukan');
             const tbOut = document.getElementById('pdf-tbody-pengeluaran');
@@ -823,15 +824,16 @@
 
             const elemenPDF = document.getElementById('area-pdf-rekapan');
             elemenPDF.classList.remove('hidden');
-            window.scrollTo(0, 0); 
+            document.body.classList.add('print-mode-rekapan');
+
+            window.print();
 
             setTimeout(() => {
-                var opsiPrint = { margin: 0.3, filename: 'Laporan_Keuangan_Ibuk.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, windowWidth: 1100 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
-                html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => { elemenPDF.classList.add('hidden'); });
-            }, 800); 
+                elemenPDF.classList.add('hidden');
+                document.body.classList.remove('print-mode-rekapan');
+            }, 1500); 
         }
 
-        // FUNGSI UNDUH PDF TAB REKAPAN AJA (SATUAN)
         function cetakPDFSingle() {
             const tbody = document.getElementById('pdf-single-tbody');
             const thead = document.getElementById('pdf-single-thead');
@@ -880,12 +882,14 @@
 
             const elemenPDF = document.getElementById('area-pdf-single');
             elemenPDF.classList.remove('hidden');
-            window.scrollTo(0, 0); 
+            document.body.classList.add('print-mode-single');
+
+            window.print();
 
             setTimeout(() => {
-                var opsiPrint = { margin: 0.5, filename: `Laporan_${tabAktif}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
-                html2pdf().set(opsiPrint).from(elemenPDF).save().then(() => { elemenPDF.classList.add('hidden'); });
-            }, 800); 
+                elemenPDF.classList.add('hidden');
+                document.body.classList.remove('print-mode-single');
+            }, 1500); 
         }
     </script>
 </body>
