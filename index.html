@@ -110,7 +110,7 @@
                 <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
                 <div class="flex items-center gap-2">
                     <button onclick="cetakPDF()" class="bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-red-700 shadow flex items-center gap-1 transition">
-                        📄 Cetak PDF
+                        📄 Unduh PDF
                     </button>
                     <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
                 </div>
@@ -267,7 +267,6 @@
                 const wadah = document.createElement('div');
                 wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
                 
-                // PENSIL DI KIRI, SILANG DI KANAN. UKURAN TEKS LEBIH MUNGIL
                 wadah.innerHTML = `
                     <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
                             class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition" title="Edit Menu">✏️</button>
@@ -345,15 +344,23 @@
             renderKeranjang();
         }
 
+        // FUNGSI UBAH QTY DIBIKIN KOSONG DEFAULT-NYA BIAR GAK RIBET DI HP
         function ubahQtyKeranjang(id) {
             let barang = keranjang.find(item => item.id === id);
             if (barang) {
-                let qtyBaru = prompt(`Masukkan jumlah untuk ${barang.nama}:`, barang.qty);
-                if (qtyBaru !== null && !isNaN(qtyBaru) && qtyBaru > 0) {
-                    barang.qty = parseInt(qtyBaru);
-                    renderKeranjang();
-                } else if (qtyBaru == "0") {
-                    hapusDariKeranjang(id);
+                // Default value diganti jadi string kosong ""
+                let qtyBaru = prompt(`Jumlah ${barang.nama} saat ini: ${barang.qty}\nMasukkan jumlah yang baru:`, "");
+                
+                // Cek kalau dia nggak pencet Batal dan isiannya gak kosong
+                if (qtyBaru !== null && qtyBaru.trim() !== "") {
+                    if (!isNaN(qtyBaru) && parseInt(qtyBaru) > 0) {
+                        barang.qty = parseInt(qtyBaru);
+                        renderKeranjang();
+                    } else if (parseInt(qtyBaru) === 0) {
+                        hapusDariKeranjang(id);
+                    } else {
+                        alert("Jumlah harus berupa angka!");
+                    }
                 }
             }
         }
