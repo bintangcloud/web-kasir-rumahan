@@ -5,17 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* CSS KHUSUS BUAT NGATUR 2 MODE PRINT (STRUK vs LAPORAN PDF) */
         @media print {
             body.print-mode-struk * { visibility: hidden; }
             body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
             body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
+            
+            body.print-mode-rekapan * { visibility: hidden; }
+            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
+            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
+
             .print\:hidden { display: none !important; }
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative z-0">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative">
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
@@ -45,7 +50,7 @@
                 </button>
             </div>
             
-            <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden"></div>
+            <div id="tempat-jaja" class="grid grid-cols-3 gap-3 mb-8 print:hidden"></div>
 
             <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
                 <div class="text-center mb-4 hidden print:block">
@@ -105,7 +110,7 @@
                 <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
                 <div class="flex items-center gap-2">
                     <button onclick="cetakPDF()" class="bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-red-700 shadow flex items-center gap-1 transition">
-                        📄 Unduh PDF
+                        📄 Cetak PDF
                     </button>
                     <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
                 </div>
@@ -170,6 +175,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
@@ -261,15 +267,15 @@
                 const wadah = document.createElement('div');
                 wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
                 
-                // TOMBOL EDIT & HAPUS MENU
+                // PENSIL DI KIRI, SILANG DI KANAN. UKURAN TEKS LEBIH MUNGIL
                 wadah.innerHTML = `
                     <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
-                            class="absolute top-1 right-8 text-blue-400 font-bold text-sm p-1 active:text-blue-600 transition" title="Edit Menu">✏️</button>
+                            class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition" title="Edit Menu">✏️</button>
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition" title="Hapus Menu">✖</button>
-                    <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
-                        <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
-                        <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
+                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition" title="Hapus Menu">✖</button>
+                    <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-2 pt-8 pb-3">
+                        <div class="font-bold text-slate-800 text-sm leading-tight">${jaja.Nama_Jaja}</div>
+                        <div class="text-emerald-600 font-bold text-xs mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
                     </div>`;
                 tempatJaja.appendChild(wadah);
             });
@@ -279,7 +285,7 @@
             const tempatJaja = document.getElementById('tempat-jaja');
             const cacheData = localStorage.getItem('cache_jaja_ibuk');
             if (cacheData) { renderKeLayar(JSON.parse(cacheData)); } 
-            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>'; }
+            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-3">Memuat data dari satelit... 🚀</div>'; }
 
             try {
                 const res = await fetch('/api/products');
@@ -290,7 +296,7 @@
                 }
             } catch (err) {
                 console.error("Gagal ambil data:", err);
-                if (!cacheData) { tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-2">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>'; }
+                if (!cacheData) { tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-3">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>'; }
             }
         }
 
@@ -303,7 +309,6 @@
             }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
         }
 
-        // FUNGSI EDIT MENU
         function editMenuDariDatabase(id, namaLama, hargaLama) {
             let namaBaru = prompt("Edit nama Jaja:", namaLama);
             if (namaBaru === null || namaBaru.trim() === "") return;
@@ -340,7 +345,6 @@
             renderKeranjang();
         }
 
-        // FUNGSI EDIT JUMLAH DI KERANJANG
         function ubahQtyKeranjang(id) {
             let barang = keranjang.find(item => item.id === id);
             if (barang) {
