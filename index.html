@@ -6,63 +6,41 @@
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* TENDANG PANAH DI INPUT ANGKA (Request Ibuk) */
-        input[type="number"]::-webkit-outer-spin-button, 
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
-        /* MODE PRINT KHUSUS STRUK DAN PDF (Sekarang ada 3 mode) */
+        /* CSS KHUSUS BUAT NGATUR 2 MODE PRINT (STRUK vs LAPORAN PDF) */
         @media print {
-            body.print-mode-struk * { visibility: hidden; }
-            body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
-            body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
-            
-            body.print-mode-rekapan * { visibility: hidden; }
-            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
-            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
-            body.print-mode-single * { visibility: hidden; }
-            body.print-mode-single #area-pdf-single, body.print-mode-single #area-pdf-single * { visibility: visible; }
-            body.print-mode-single #area-pdf-single { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
             .print\:hidden { display: none !important; }
+
+            /* MODE STRUK: Hapus position absolute biar kertas di HP gak error/terpotong */
+            body.print-mode-struk { background-color: white; }
+            body.print-mode-struk #area-struk { box-shadow: none; border: none; margin: 0; padding: 0; width: 100%; }
+
+            /* MODE REKAPAN: Sembunyikan semua area kecuali area pdf rekapan */
+            body.print-mode-rekapan > div:not(#area-pdf-rekapan) { display: none !important; }
+            body.print-mode-rekapan #area-pdf-rekapan { display: block !important; width: 100%; background: white; margin: 0; padding: 10px; }
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative z-0">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative">
 
     <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
             <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
             <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
-            <input type="password" id="input-pin" oninput="cekPinOtomatis()" maxlength="4" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
+            <input type="password" id="input-pin" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl mb-5 focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
+            <button onclick="cekPin()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl active:bg-emerald-700 text-lg shadow-lg transition">Buka Kasir</button>
         </div>
     </div>
 
     <div>
-        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-10 print:hidden flex justify-between items-center">
-            <h1 class="text-lg font-bold tracking-wide">Web Kasir</h1>
-            <div class="flex gap-1.5">
-                <button onclick="bukaInputPengeluaran()" class="bg-rose-600 border border-rose-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
-                    💸 Pengeluaran
-                </button>
-                <button onclick="bukaRekapan()" class="bg-slate-600 border border-slate-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-slate-700 shadow transition flex items-center gap-1">
-                    📈 Rekap Pemasukan dan Pengeluaran
-                </button>
-                <button onclick="bukaLabaRugi()" class="bg-blue-600 border border-blue-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-blue-700 shadow transition flex items-center gap-1">
-                    📊 Laba Rugi
-                </button>
-            </div>
+        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-30 print:hidden flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">Web Kasir</h1>
+            <button onclick="bukaRekapan()" class="bg-slate-700 border border-slate-600 px-3 py-1 rounded-lg text-sm font-semibold active:bg-slate-600 shadow transition">
+                Catatan Penjualan
+            </button>
         </div>
 
         <div class="p-4 max-w-md mx-auto">
-            <label for="nama-pembeli" class="block text-slate-600 font-bold mb-1 ml-1 print:hidden text-sm">Nama Pelanggan:</label>
-            <input type="text" id="nama-pembeli" placeholder="Ketik nama di sini..." onkeypress="if(event.key === 'Enter') this.blur();"
+            <input type="text" id="nama-pembeli" placeholder="Masukkan Nama Pelanggan..." 
                 class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg print:hidden">
 
             <div class="flex justify-between items-center mb-3 print:hidden">
@@ -72,7 +50,7 @@
                 </button>
             </div>
             
-            <div id="tempat-jaja" class="grid grid-cols-3 gap-3 mb-8 print:hidden"></div>
+            <div id="tempat-jaja" class="grid grid-cols-2 gap-4 mb-8 print:hidden"></div>
 
             <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
                 <div class="text-center mb-4 hidden print:block">
@@ -126,103 +104,29 @@
         </div>
     </div>
 
-    <div id="modal-pengeluaran" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
-            <h2 class="font-bold text-xl text-rose-600 text-center mb-4">Catat Pengeluaran</h2>
-            
-            <label class="block text-slate-600 font-bold mb-1 text-sm">Beli apa?</label>
-            <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli gula..." onkeypress="if(event.key === 'Enter') this.blur();"
-                class="w-full p-3 rounded-xl border border-slate-300 mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
-
-            <label class="block text-slate-600 font-bold mb-1 text-sm">Berapa harganya? (Rp)</label>
-            <input type="text" inputmode="numeric" id="input-nom-pengeluaran" placeholder="Misal: 15000" 
-                oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeypress="if(event.key === 'Enter') this.blur();"
-                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
-
-            <div class="flex gap-3">
-                <button onclick="tutupInputPengeluaran()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
-                <button onclick="simpanPengeluaranFinal()" class="w-1/2 bg-rose-600 text-white font-bold p-3 rounded-xl active:bg-rose-700 transition">Simpan</button>
-            </div>
-        </div>
-    </div>
-
     <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
-        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[90vh] flex flex-col shadow-2xl relative">
-            <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
-            
-            <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
-
-            <div class="flex gap-1 mb-3 border-b-2 border-slate-100">
-                <button id="tab-pemasukan" onclick="gantiTab('pemasukan')" class="flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition">Pemasukan</button>
-                <button id="tab-pengeluaran" onclick="gantiTab('pengeluaran')" class="flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition">Pengeluaran</button>
-            </div>
-
-            <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="🔍 Cari nama..." class="w-full p-2 mb-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
-            <div class="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                <div class="flex-1">
-                    <label class="text-[10px] font-bold text-slate-500 block">Dari Tgl:</label>
-                    <input type="date" id="input-tgl-mulai-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
-                </div>
-                <div class="border-l border-slate-300 mx-1"></div>
-                <div class="flex-1">
-                    <label class="text-[10px] font-bold text-slate-500 block">S/d Tgl:</label>
-                    <input type="date" id="input-tgl-akhir-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
+        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[80vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
+                <h2 class="font-bold text-lg text-slate-800">Catatan Penjualan</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="cetakPDF()" class="bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg active:bg-red-700 shadow flex items-center gap-1 transition">
+                        📄 Cetak PDF
+                    </button>
+                    <button onclick="tutupRekapan()" class="text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition">✖</button>
                 </div>
             </div>
 
-            <div id="area-list-pemasukan" class="overflow-y-auto flex-1">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="input-cari" oninput="filterRekapan()" placeholder="Cari nama..." class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+                <input type="date" id="input-tanggal" onchange="filterRekapan()" class="flex-1 p-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-1/2">
+            </div>
+
+            <div class="overflow-y-auto flex-1">
                 <ul id="list-rekapan" class="space-y-2 text-sm"></ul>
             </div>
-
-            <div id="area-list-pengeluaran" class="overflow-y-auto flex-1 hidden">
-                <ul id="list-pengeluaran" class="space-y-2 text-sm"></ul>
+            <div id="area-total-rekapan" class="mt-4 font-bold text-lg text-right border-t border-slate-200 pt-3 text-slate-800">
+                Total Pemasukan: <br> <span class="text-emerald-600 text-2xl" id="total-semua-rekapan">Rp 0</span>
             </div>
-
-            <div class="mt-3 border-t border-slate-200 pt-3 flex justify-between items-center">
-                <span class="text-slate-600 font-bold text-sm" id="label-footer-rekap">Total Pemasukan:</span>
-                <span class="font-extrabold text-emerald-600 text-lg" id="angka-footer-rekap">Rp 0</span>
-            </div>
-
-            <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
-                🖨️ Cetak Laporan (Pemasukan)
-            </button>
-        </div>
-    </div>
-
-    <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
-            <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
-            <h2 class="font-bold text-xl text-slate-800 text-center mb-4 border-b pb-3">Dashboard Laba Rugi</h2>
-            
-            <div class="flex gap-2 mb-5 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div class="flex-1">
-                    <label class="text-xs font-bold text-slate-500 block mb-1">Dari Tgl:</label>
-                    <input type="date" id="input-tgl-mulai-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
-                </div>
-                <div class="flex-1">
-                    <label class="text-xs font-bold text-slate-500 block mb-1">S/d Tgl:</label>
-                    <input type="date" id="input-tgl-akhir-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
-                </div>
-            </div>
-
-            <div class="space-y-3 mb-6">
-                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex justify-between items-center">
-                    <span class="font-bold text-emerald-700">Total Pemasukan</span>
-                    <span class="font-extrabold text-emerald-600 text-lg" id="laba-pemasukan">Rp 0</span>
-                </div>
-                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex justify-between items-center">
-                    <span class="font-bold text-rose-700">Total Pengeluaran</span>
-                    <span class="font-extrabold text-rose-600 text-lg" id="laba-pengeluaran">Rp 0</span>
-                </div>
-                <div class="bg-blue-50 border border-blue-300 p-4 rounded-xl flex justify-between items-center mt-2 shadow-sm">
-                    <span class="font-black text-blue-900 text-lg">LABA BERSIH</span>
-                    <span class="font-black text-blue-700 text-2xl" id="laba-bersih">Rp 0</span>
-                </div>
-            </div>
-
-            <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Laporan Keuangan
-            </button>
         </div>
     </div>
 
@@ -235,82 +139,47 @@
                 <p id="detail-tgl"></p>
                 <p id="detail-nama" class="font-bold mt-1 text-slate-800"></p>
             </div>
+            
             <ul id="list-detail" class="space-y-3 mb-4 text-sm max-h-48 overflow-y-auto"></ul>
+            
             <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800 mb-5">
                 <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
             </div>
+            
             <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
                 🖨️ Cetak Ulang Nota
             </button>
         </div>
     </div>
 
-    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-full z-[-50]">
-        <h2 class="text-3xl font-bold mb-1 text-center border-b-4 border-black pb-3">Laporan Keuangan (GINA & ULI)</h2>
-        <p id="pdf-tgl-laporan" class="mb-6 text-center text-base font-semibold mt-3"></p>
+    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans">
+        <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Penjualan (GINA & ULI)</h2>
+        <p id="pdf-tgl-laporan" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         
-        <div class="flex gap-8">
-            <div class="flex-1">
-                <h3 class="font-bold text-emerald-700 border-b-2 border-emerald-700 mb-3 text-lg">1. PEMASUKAN</h3>
-                <table class="w-full text-left border-collapse mb-4 text-sm">
-                    <thead>
-                        <tr class="border-b-2 border-black">
-                            <th class="py-2 pl-2">Nota</th>
-                            <th class="py-2">Pelanggan</th>
-                            <th class="py-2 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pdf-tbody-pemasukan"></tbody>
-                </table>
-            </div>
-
-            <div class="flex-1">
-                <h3 class="font-bold text-rose-700 border-b-2 border-rose-700 mb-3 text-lg">2. PENGELUARAN</h3>
-                <table class="w-full text-left border-collapse mb-4 text-sm">
-                    <thead>
-                        <tr class="border-b-2 border-black">
-                            <th class="py-2 pl-2">Tanggal</th>
-                            <th class="py-2">Keterangan</th>
-                            <th class="py-2 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pdf-tbody-pengeluaran"></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="border-t-4 border-black pt-4 mt-4 w-full flex flex-col items-end text-base">
-            <div class="w-1/2 flex justify-between mb-2"><span class="font-semibold text-emerald-700">Total Pemasukan:</span> <span id="pdf-total-in" class="font-bold">Rp 0</span></div>
-            <div class="w-1/2 flex justify-between mb-3"><span class="font-semibold text-rose-700">Total Pengeluaran:</span> <span id="pdf-total-out" class="font-bold">Rp 0</span></div>
-            <div class="w-1/2 flex justify-between border-t-2 border-black pt-3"><span class="font-bold text-xl">Laba Bersih:</span> <span id="pdf-laba" class="font-extrabold text-2xl text-blue-700">Rp 0</span></div>
-        </div>
-    </div>
-
-    <div id="area-pdf-single" class="hidden bg-white text-black font-sans p-8 absolute top-0 left-0 w-full z-[-50]">
-        <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2" id="pdf-single-title">Laporan</h2>
-        <p id="pdf-single-tgl" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         <table class="w-full text-left border-collapse mb-6 text-sm">
             <thead>
-                <tr class="border-b-2 border-black" id="pdf-single-thead"></tr>
+                <tr class="border-b-2 border-black">
+                    <th class="py-2 pl-2">Nota</th>
+                    <th class="py-2">Pelanggan</th>
+                    <th class="py-2">Waktu</th>
+                    <th class="py-2 pr-2 text-right">Total</th>
+                </tr>
             </thead>
-            <tbody id="pdf-single-tbody"></tbody>
+            <tbody id="pdf-tbody">
+                </tbody>
         </table>
+        
         <div class="flex justify-between items-center border-t-2 border-black pt-2">
-            <span class="font-bold text-lg" id="pdf-single-total-label">Total:</span>
-            <span id="pdf-single-total" class="font-bold text-xl">Rp 0</span>
+            <span class="font-bold text-lg">Total Pendapatan:</span>
+            <span id="pdf-total-pendapatan" class="font-bold text-xl">Rp 0</span>
         </div>
     </div>
 
     <script>
         let keranjang = [];
         let semuaTransaksi = [];
-        let dataRekapanSaatIni = []; 
-        let semuaPengeluaran = []; 
-        let dataPengeluaranSaatIni = []; 
+        let dataRekapanSaatIni = []; // Nyimpen data khusus buat di-print PDF
         let detailTrxSaatIni = null; 
-        let tabAktif = 'pemasukan';
-        let globalTotalPemasukan = 0;
-        let globalTotalPengeluaran = 0;
         const PIN_RAHASIA = "2222"; 
 
         function formatTanggalCantik(tglString) {
@@ -332,87 +201,61 @@
             return `${thn}-${bln}-${hari}`; 
         }
 
-        function formatNota(num) { return "INV-" + String(num).padStart(4, '0'); }
-
-        function isTanggalSesuai(tglItem, start, end) {
-            if (!start && !end) return true;
-            if (start && !end) return tglItem >= start;
-            if (!start && end) return tglItem <= end;
-            return tglItem >= start && tglItem <= end;
+        function formatNota(num) {
+            return "INV-" + String(num).padStart(4, '0');
         }
 
-        function cekPinOtomatis() {
-            const inputField = document.getElementById('input-pin');
-            const pin = inputField.value;
-            if (pin.length === PIN_RAHASIA.length) {
-                inputField.blur();
-                if(pin === PIN_RAHASIA) { 
-                    document.getElementById('layar-login').classList.add('hidden');
-                    muatMenu(); inputField.value = ''; 
-                } else { alert("PIN Salah! Coba lagi."); inputField.value = ''; }
-            }
-        }
-
-        function bukaInputPengeluaran() {
-            document.getElementById('modal-pengeluaran').classList.remove('hidden');
-            document.getElementById('input-ket-pengeluaran').value = '';
-            document.getElementById('input-nom-pengeluaran').value = '';
-        }
-        function tutupInputPengeluaran() { document.getElementById('modal-pengeluaran').classList.add('hidden'); }
-
-        function simpanPengeluaranFinal() {
-            if (document.activeElement) document.activeElement.blur(); 
-            let ket = document.getElementById('input-ket-pengeluaran').value;
-            let nom = document.getElementById('input-nom-pengeluaran').value;
-            
-            if (!ket || ket.trim() === "") { alert("Keterangan belum diisi!"); return; }
-            if (!nom || isNaN(nom) || nom.trim() === "") { alert("Nominal harus diisi angka!"); return; }
-
-            fetch('/api/expenses', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ keterangan: ket, nominal: parseInt(nom) })
-            }).then(res => res.json()).then(data => { 
-                alert(data.pesan); tutupInputPengeluaran();
-            });
-        }
-
-        function gantiTab(tabName) {
-            tabAktif = tabName;
-            const tabIn = document.getElementById('tab-pemasukan');
-            const tabOut = document.getElementById('tab-pengeluaran');
-            const areaIn = document.getElementById('area-list-pemasukan');
-            const areaOut = document.getElementById('area-list-pengeluaran');
-            
-            const labelFooter = document.getElementById('label-footer-rekap');
-            const angkaFooter = document.getElementById('angka-footer-rekap');
-            const btnUnduh = document.getElementById('btn-unduh-single');
-
-            if(tabName === 'pemasukan') {
-                tabIn.className = "flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition";
-                tabOut.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
-                areaIn.classList.remove('hidden');
-                areaOut.classList.add('hidden');
-                
-                labelFooter.innerText = "Total Pemasukan:";
-                angkaFooter.className = "font-extrabold text-emerald-600 text-xl";
-                angkaFooter.innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
-                
-                btnUnduh.className = "w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "🖨️ Cetak Laporan (Pemasukan)";
+        function cekPin() {
+            const pin = document.getElementById('input-pin').value;
+            if(pin === PIN_RAHASIA) { 
+                document.getElementById('layar-login').classList.add('hidden');
+                muatMenu(); 
             } else {
-                tabOut.className = "flex-1 font-bold pb-2 text-rose-500 border-b-2 border-rose-500 transition";
-                tabIn.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
-                areaOut.classList.remove('hidden');
-                areaIn.classList.add('hidden');
-
-                labelFooter.innerText = "Total Pengeluaran:";
-                angkaFooter.className = "font-extrabold text-rose-600 text-xl";
-                angkaFooter.innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
-
-                btnUnduh.className = "w-full mt-3 bg-rose-600 text-white font-bold py-2.5 rounded-xl active:bg-rose-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "🖨️ Cetak Laporan (Pengeluaran)";
+                alert("PIN Salah!");
+                document.getElementById('input-pin').value = '';
             }
+        }
+
+        // FUNGSI BARU: CETAK PDF SEBAGAI PENGGANTI EXCEL
+        function cetakPDF() {
+            if (dataRekapanSaatIni.length === 0) { alert("Belum ada data penjualan untuk dicetak!"); return; }
+
+            const tbody = document.getElementById('pdf-tbody');
+            tbody.innerHTML = '';
+            let totalPendapatan = 0;
+
+            // Masukin data rekapan ke dalam tabel PDF
+            dataRekapanSaatIni.forEach(trx => {
+                let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-300">
+                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut)}</td>
+                        <td class="py-2">${trx.nama_pembeli}</td>
+                        <td class="py-2">${tglCantik}</td>
+                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+                totalPendapatan += trx.total_belanja;
+            });
+
+            document.getElementById('pdf-total-pendapatan').innerText = `Rp ${totalPendapatan.toLocaleString('id-ID')}`;
+            
+            // Cek apakah lagi nge-filter tanggal atau semua
+            let tglFilter = document.getElementById('input-tanggal').value;
+            document.getElementById('pdf-tgl-laporan').innerText = tglFilter ? `Filter Tanggal: ${tglFilter}` : `Laporan Semua Waktu`;
+
+            // Aktifkan mode print PDF
+            document.body.classList.add('print-mode-rekapan');
+            document.getElementById('area-pdf-rekapan').classList.remove('hidden');
+
+            // Eksekusi Print (Bisa di-Save as PDF di HP)
+            window.print();
+
+            // Tahan napas, balikin ke normal
+            setTimeout(function() {
+                document.body.classList.remove('print-mode-rekapan');
+                document.getElementById('area-pdf-rekapan').classList.add('hidden');
+            }, 1500);
         }
 
         function renderKeLayar(data) {
@@ -420,17 +263,13 @@
             tempatJaja.innerHTML = ''; 
             data.forEach(jaja => {
                 const wadah = document.createElement('div');
-                wadah.id = 'menu-kotak-' + jaja.Id_Jaja; 
-                wadah.className = 'relative bg-white rounded-xl shadow-sm border-2 border-slate-200 transition-all duration-150 text-center flex flex-col items-center justify-center';
-                
+                wadah.className = 'relative bg-white rounded-xl shadow-sm border border-slate-200 active:bg-slate-50 transition text-center flex flex-col items-center justify-center';
                 wadah.innerHTML = `
-                    <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
-                            class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition z-10" title="Edit Menu">✏️</button>
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition z-10" title="Hapus Menu">✖</button>
-                    <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-2 pt-8 pb-3">
-                        <div class="font-bold text-slate-800 text-sm leading-tight">${jaja.Nama_Jaja}</div>
-                        <div class="text-emerald-600 font-bold text-xs mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
+                            class="absolute top-1 right-2 text-rose-400 font-bold text-sm p-1 active:text-rose-600 transition">✖</button>
+                    <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-4 pt-5 mt-1">
+                        <div class="font-bold text-slate-800 text-lg">${jaja.Nama_Jaja}</div>
+                        <div class="text-emerald-600 font-semibold mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
                     </div>`;
                 tempatJaja.appendChild(wadah);
             });
@@ -440,7 +279,7 @@
             const tempatJaja = document.getElementById('tempat-jaja');
             const cacheData = localStorage.getItem('cache_jaja_ibuk');
             if (cacheData) { renderKeLayar(JSON.parse(cacheData)); } 
-            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-3">Memuat data dari satelit... 🚀</div>'; }
+            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-2">Memuat data dari satelit... 🚀</div>'; }
 
             try {
                 const res = await fetch('/api/products');
@@ -449,26 +288,18 @@
                     localStorage.setItem('cache_jaja_ibuk', JSON.stringify(result.data));
                     renderKeLayar(result.data);
                 }
-            } catch (err) { console.error("Gagal ambil data:", err); }
+            } catch (err) {
+                console.error("Gagal ambil data:", err);
+                if (!cacheData) { tempatJaja.innerHTML = '<div class="text-center text-rose-500 col-span-2">Koneksi internet lagi rewel nih Buk. Coba refresh ya.</div>'; }
+            }
         }
 
         function tambahMenu() {
-            if (document.activeElement) document.activeElement.blur(); 
             let nama = prompt("Masukkan nama Jaja / Barang baru:");
             if (!nama) return;
             let harga = prompt("Masukkan harganya (angka saja, misal: 15000):");
             if (!harga || isNaN(harga)) { alert("Harga harus berupa angka!"); return; }
             fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: nama, Harga: parseInt(harga) })
-            }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
-        }
-
-        function editMenuDariDatabase(id, namaLama, hargaLama) {
-            if (document.activeElement) document.activeElement.blur(); 
-            let namaBaru = prompt("Edit nama Jaja:", namaLama);
-            if (namaBaru === null || namaBaru.trim() === "") return;
-            let hargaBaru = prompt("Edit harga " + namaBaru + ":", hargaLama);
-            if (hargaBaru === null || isNaN(hargaBaru) || hargaBaru.trim() === "") return;
-            fetch('/api/products/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: namaBaru, Harga: parseInt(hargaBaru) })
             }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
         }
 
@@ -480,13 +311,6 @@
         }
 
         function tambahKeKeranjang(id, nama, harga) {
-            if (document.activeElement) document.activeElement.blur(); 
-            let kotakMenu = document.getElementById('menu-kotak-' + id);
-            if (kotakMenu) {
-                kotakMenu.classList.add('bg-emerald-200', 'border-emerald-500', 'scale-95');
-                setTimeout(() => { kotakMenu.classList.remove('bg-emerald-200', 'border-emerald-500', 'scale-95'); }, 150); 
-            }
-
             let barangAda = keranjang.find(item => item.id === id);
             if (barangAda) barangAda.qty += 1;
             else keranjang.push({ id: id, nama: nama, harga: harga, qty: 1 });
@@ -496,21 +320,6 @@
         function hapusDariKeranjang(id) {
             keranjang = keranjang.filter(item => item.id !== id);
             renderKeranjang();
-        }
-
-        function ubahQtyKeranjang(id) {
-            if (document.activeElement) document.activeElement.blur(); 
-            let barang = keranjang.find(item => item.id === id);
-            if (barang) {
-                let qtyBaru = prompt(`Jumlah ${barang.nama} saat ini: ${barang.qty}\nMasukkan jumlah yang baru:`, "");
-                if (qtyBaru !== null && qtyBaru.trim() !== "") {
-                    if (!isNaN(qtyBaru) && parseInt(qtyBaru) > 0) {
-                        barang.qty = parseInt(qtyBaru);
-                        renderKeranjang();
-                    } else if (parseInt(qtyBaru) === 0) { hapusDariKeranjang(id); } 
-                    else { alert("Jumlah harus berupa angka!"); }
-                }
-            }
         }
 
         function renderKeranjang() {
@@ -525,11 +334,7 @@
                 daftar.innerHTML += `
                     <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
                         <div class="flex justify-between items-center w-full">
-                            <div>
-                                <span class="font-semibold text-slate-800 print:text-black">${item.nama}</span>
-                                <span class="hidden print:inline text-sm text-slate-500 ml-2">x${item.qty}</span>
-                                <button onclick="ubahQtyKeranjang(${item.id})" class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 font-bold print:hidden active:bg-blue-200">Qty: ${item.qty} ✎</button>
-                            </div>
+                            <div><span class="font-semibold text-slate-800 print:text-black">${item.nama}</span><span class="text-sm text-slate-500 ml-2 print:hidden">x${item.qty}</span></div>
                             <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">✖</button></div>
                         </div>
                         <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.qty} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
@@ -566,174 +371,97 @@
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
                 
-                tutupKonfirmasi();
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
-                    let totalTransaksi = rData.data ? rData.data.length : res.id_nota; 
-                    
+                    let totalTransaksi = rData.data.length; 
+
+                    tutupKonfirmasi();
                     document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(totalTransaksi);
                     document.getElementById('struk-tanggal').innerText = res.tanggal;
                     document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
                     
+                    // Aktifkan mode struk
                     document.body.classList.add('print-mode-struk');
                     window.print(); 
                     
                     setTimeout(function() {
                         document.body.classList.remove('print-mode-struk');
-                        keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
+                        keranjang = []; 
+                        document.getElementById('nama-pembeli').value = ''; 
+                        renderKeranjang();
                     }, 1500); 
-                }).catch(e => {
-                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota || 999);
-                    document.getElementById('struk-tanggal').innerText = res.tanggal || formatTanggalCantik(new Date().toISOString());
-                    document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
-                    
-                    document.body.classList.add('print-mode-struk');
-                    window.print(); 
-                    
-                    setTimeout(function() {
-                        document.body.classList.remove('print-mode-struk');
-                        keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
-                    }, 1500);
-                });
-            }).catch(e => { alert("Gagal menyimpan pesanan. Cek koneksi server!"); });
-        }
-
-        function bukaLabaRugi() {
-            document.getElementById('modal-laba').classList.remove('hidden');
-            document.getElementById('input-tgl-mulai-laba').value = '';
-            document.getElementById('input-tgl-akhir-laba').value = '';
-            hitungLabaRugi(); 
-        }
-
-        function tutupLabaRugi() { document.getElementById('modal-laba').classList.add('hidden'); }
-
-        function hitungLabaRugi() {
-            let startTgl = document.getElementById('input-tgl-mulai-laba').value;
-            let endTgl = document.getElementById('input-tgl-akhir-laba').value;
-            let totalIn = 0; let totalOut = 0;
-
-            fetch('/api/transactions').then(res => res.json()).then(resTrx => {
-                let trxFiltered = resTrx.data.filter(t => isTanggalSesuai(formatTanggalUntukFilter(t.tanggal_transaksi), startTgl, endTgl));
-                trxFiltered.forEach(t => totalIn += t.total_belanja);
-                document.getElementById('laba-pemasukan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
-                
-                fetch('/api/expenses').then(res => res.json()).then(resExp => {
-                    let expFiltered = resExp.data.filter(e => isTanggalSesuai(formatTanggalUntukFilter(e.tanggal), startTgl, endTgl));
-                    expFiltered.forEach(e => totalOut += e.nominal);
-                    document.getElementById('laba-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
-
-                    let bersih = totalIn - totalOut;
-                    document.getElementById('laba-bersih').innerText = `Rp ${bersih.toLocaleString('id-ID')}`;
-                    if(bersih < 0) { document.getElementById('laba-bersih').className = "font-black text-rose-600 text-2xl"; } 
-                    else { document.getElementById('laba-bersih').className = "font-black text-blue-700 text-2xl"; }
-
-                    dataRekapanSaatIni = trxFiltered;
-                    dataPengeluaranSaatIni = expFiltered;
-                    dataRekapanSaatIni.reverse().forEach((t, idx) => t.nomor_urut = idx + 1);
-                    dataRekapanSaatIni.reverse();
                 });
             });
         }
 
         function bukaRekapan() {
             document.getElementById('modal-rekapan').classList.remove('hidden');
-            document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
-            document.getElementById('list-pengeluaran').innerHTML = '<li class="text-center text-slate-400">Memuat data...</li>';
-            document.getElementById('input-cari-rekap').value = ''; 
-            document.getElementById('input-tgl-mulai-rekap').value = ''; 
-            document.getElementById('input-tgl-akhir-rekap').value = ''; 
+            document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400">Memuat rekapan...</li>';
+            document.getElementById('input-cari').value = ''; 
+            document.getElementById('input-tanggal').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
                 let dataUrut = res.data.sort((a, b) => a.id - b.id);
-                semuaTransaksi = dataUrut.map((trx, index) => { trx.nomor_urut = index + 1; return trx; }).reverse(); 
-                dataRekapanSaatIni = semuaTransaksi; 
+                semuaTransaksi = dataUrut.map((trx, index) => {
+                    trx.nomor_urut = index + 1; 
+                    return trx;
+                }).reverse(); 
                 
-                fetch('/api/expenses').then(res2 => res2.json()).then(res2 => {
-                    semuaPengeluaran = res2.data;
-                    dataPengeluaranSaatIni = semuaPengeluaran;
-                    filterRekapan();
-                });
+                dataRekapanSaatIni = semuaTransaksi; // Simpan memori awal untuk PDF
+                tampilkanListRekapan(dataRekapanSaatIni); 
             });
         }
 
         function tutupRekapan() { document.getElementById('modal-rekapan').classList.add('hidden'); }
 
         function filterRekapan() {
-            let kataKunci = document.getElementById('input-cari-rekap').value.toLowerCase();
-            let startTgl = document.getElementById('input-tgl-mulai-rekap').value; 
-            let endTgl = document.getElementById('input-tgl-akhir-rekap').value; 
+            let kataKunci = document.getElementById('input-cari').value.toLowerCase();
+            let filterTgl = document.getElementById('input-tanggal').value; 
             
-            dataRekapanSaatIni = semuaTransaksi.filter(trx => {
+            let dataTerfilter = semuaTransaksi.filter(trx => {
                 let matchNama = trx.nama_pembeli.toLowerCase().includes(kataKunci);
-                let matchTgl = isTanggalSesuai(formatTanggalUntukFilter(trx.tanggal_transaksi), startTgl, endTgl);
+                let tglTrxFilter = formatTanggalUntukFilter(trx.tanggal_transaksi);
+                let matchTgl = filterTgl ? (tglTrxFilter === filterTgl) : true;
                 return matchNama && matchTgl;
             });
 
-            dataPengeluaranSaatIni = semuaPengeluaran.filter(exp => {
-                let matchKet = exp.keterangan.toLowerCase().includes(kataKunci);
-                let matchTgl = isTanggalSesuai(formatTanggalUntukFilter(exp.tanggal), startTgl, endTgl);
-                return matchKet && matchTgl;
-            });
-
-            tampilkanLayarKeuangan(); 
+            dataRekapanSaatIni = dataTerfilter; // Update memori PDF biar ngikutin filter
+            tampilkanListRekapan(dataRekapanSaatIni); 
         }
 
-        function tampilkanLayarKeuangan() {
-            let htmlIn = ''; globalTotalPemasukan = 0;
-            let htmlOut = ''; globalTotalPengeluaran = 0;
+        function tampilkanListRekapan(data) {
+            let html = ''; let totalSemua = 0;
+            if (data.length === 0) { document.getElementById('list-rekapan').innerHTML = '<li class="text-center text-slate-400 italic mt-4">Tidak ada penjualan di tanggal ini...</li>'; document.getElementById('total-semua-rekapan').innerText = "Rp 0"; return; }
 
-            if (dataRekapanSaatIni.length === 0) { htmlIn = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
-            dataRekapanSaatIni.forEach(trx => {
-                let tgl = formatTanggalCantik(trx.tanggal_transaksi);
-                htmlIn += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
-                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tgl}', ${trx.total_belanja})" class="cursor-pointer flex-1">
+            data.forEach(trx => {
+                let tglCantik = formatTanggalCantik(trx.tanggal_transaksi);
+
+                html += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
+                    <div onclick="lihatDetail(${trx.id}, ${trx.nomor_urut}, '${trx.nama_pembeli}', '${tglCantik}', ${trx.total_belanja})" class="cursor-pointer flex-1">
                         <div class="font-bold text-slate-700">${trx.nama_pembeli} <span class="text-xs font-bold text-slate-500 ml-2 bg-slate-200 px-2 py-0.5 rounded">${formatNota(trx.nomor_urut)}</span></div>
                         <div class="flex justify-between items-center mt-1 pr-3">
-                            <span class="text-xs text-slate-500">${tgl}</span>
+                            <span class="text-xs text-slate-500">${tglCantik}</span>
                             <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
-                    <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">✖</button>
+                    <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">
+                        ✖
+                    </button>
                 </li>`;
-                globalTotalPemasukan += trx.total_belanja;
+                totalSemua += trx.total_belanja;
             });
-            document.getElementById('list-rekapan').innerHTML = htmlIn;
-
-            if (dataPengeluaranSaatIni.length === 0) { htmlOut = '<li class="text-center text-slate-400 italic mt-4">Kosong...</li>'; }
-            dataPengeluaranSaatIni.forEach(exp => {
-                let tgl = formatTanggalCantik(exp.tanggal);
-                htmlOut += `<li class="border-b border-slate-100 pb-2 p-2 rounded-lg transition flex justify-between items-center hover:bg-slate-50">
-                    <div class="flex-1">
-                        <div class="font-bold text-slate-700">${exp.keterangan}</div>
-                        <div class="flex justify-between items-center mt-1 pr-3">
-                            <span class="text-xs text-slate-500">${tgl}</span>
-                            <span class="text-rose-500 font-bold">Rp ${exp.nominal.toLocaleString('id-ID')}</span>
-                        </div>
-                    </div>
-                    <button onclick="hapusPengeluaran(${exp.id}, '${exp.keterangan}')" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Bon">✖</button>
-                </li>`;
-                globalTotalPengeluaran += exp.nominal;
-            });
-            document.getElementById('list-pengeluaran').innerHTML = htmlOut;
-
-            gantiTab(tabAktif);
+            document.getElementById('list-rekapan').innerHTML = html;
+            document.getElementById('total-semua-rekapan').innerText = `Rp ${totalSemua.toLocaleString('id-ID')}`;
         }
 
         function hapusTransaksi(id, nomor_urut) {
             let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
             if (inputPin === PIN_RAHASIA) {
                 if (confirm("Yakin mau hapus nota " + formatNota(nomor_urut) + "? Data ini bakal hilang selamanya!")) {
-                    fetch('/api/transactions/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); bukaRekapan(); });
+                    fetch('/api/transactions/' + id, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => { alert(data.pesan); bukaRekapan(); });
                 }
             } else if (inputPin !== null) { alert("PIN Salah! Gagal menghapus nota."); }
-        }
-
-        function hapusPengeluaran(id, ket) {
-            let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus bon pengeluaran ini:");
-            if (inputPin === PIN_RAHASIA) {
-                if (confirm(`Yakin mau hapus pengeluaran "${ket}"?`)) {
-                    fetch('/api/expenses/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); bukaRekapan(); });
-                }
-            } else if (inputPin !== null) { alert("PIN Salah! Gagal menghapus."); }
         }
 
         function lihatDetail(id, nomor_urut, nama, tgl, total) {
@@ -745,152 +473,58 @@
             document.getElementById('list-detail').innerHTML = '<li class="text-center italic text-slate-400">Memuat rincian barang...</li>';
 
             detailTrxSaatIni = { id: id, nomor_urut: nomor_urut, nama: nama, tgl: tgl, total: total, items: [] };
-            fetch('/api/transactions/' + id + '/details').then(res => res.json()).then(res => {
-                detailTrxSaatIni.items = res.data; 
-                let html = '';
-                res.data.forEach(item => {
-                    html += `<li class="flex justify-between border-b border-dashed border-slate-200 pb-2">
-                        <div><span class="font-semibold text-slate-800">${item.nama_jaja}</span><div class="text-xs text-slate-500">${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</div></div>
-                        <div class="font-semibold text-slate-700 mt-1">Rp ${item.subtotal.toLocaleString('id-ID')}</div>
-                    </li>`;
-                });
-                document.getElementById('list-detail').innerHTML = html;
-            });
+
+            fetch('/api/transactions/' + id + '/details')
+                .then(res => res.json())
+                .then(res => {
+                    detailTrxSaatIni.items = res.data; 
+
+                    let html = '';
+                    res.data.forEach(item => {
+                        html += `
+                        <li class="flex justify-between border-b border-dashed border-slate-200 pb-2">
+                            <div><span class="font-semibold text-slate-800">${item.nama_jaja}</span><div class="text-xs text-slate-500">${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</div></div>
+                            <div class="font-semibold text-slate-700 mt-1">Rp ${item.subtotal.toLocaleString('id-ID')}</div>
+                        </li>`;
+                    });
+                    document.getElementById('list-detail').innerHTML = html;
+                })
+                .catch(err => { document.getElementById('list-detail').innerHTML = '<li class="text-center text-rose-500">Gagal memuat detail.</li>'; });
         }
 
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
+
             document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(detailTrxSaatIni.nomor_urut);
             document.getElementById('struk-tanggal').innerText = detailTrxSaatIni.tgl + " (Cetak Ulang)";
             document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + detailTrxSaatIni.nama;
 
             const daftar = document.getElementById('daftar-keranjang');
             daftar.innerHTML = ''; 
+            
             detailTrxSaatIni.items.forEach((item) => {
-                daftar.innerHTML += `<li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
-                    <div class="font-bold text-black text-base">${item.nama_jaja}</div>
-                    <div class="flex justify-between w-full text-sm text-black mt-1">
-                        <span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span>
-                        <span class="font-bold">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
-                    </div>
-                </li>`;
+                daftar.innerHTML += `
+                    <li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
+                        <div class="font-bold text-black text-base">${item.nama_jaja}</div>
+                        <div class="flex justify-between w-full text-sm text-black mt-1">
+                            <span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span>
+                            <span class="font-bold">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
+                        </div>
+                    </li>`;
             });
             document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
 
+            // Aktifkan mode struk
             document.body.classList.add('print-mode-struk');
             window.print();
-            setTimeout(function() { document.body.classList.remove('print-mode-struk'); renderKeranjang(); }, 1500); 
+
+            setTimeout(function() {
+                document.body.classList.remove('print-mode-struk');
+                renderKeranjang();
+            }, 1500); 
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
-
-        function formatJudulTanggal(start, end) {
-            if (start && end) return `${start} s/d ${end}`;
-            if (start) return `Dari tanggal ${start}`;
-            if (end) return `Sampai tanggal ${end}`;
-            return `Semua Waktu`;
-        }
-
-        // --- FUNGSI PRINT (KEMBALI KE BAWAAN HP) ---
-        function cetakPDF() {
-            const tbIn = document.getElementById('pdf-tbody-pemasukan');
-            const tbOut = document.getElementById('pdf-tbody-pengeluaran');
-            tbIn.innerHTML = ''; tbOut.innerHTML = '';
-            let tIn = 0; let tOut = 0;
-
-            dataRekapanSaatIni.forEach(trx => {
-                tbIn.innerHTML += `<tr class="border-b border-gray-300">
-                    <td class="py-1 pl-1">${formatNota(trx.nomor_urut || 0)}</td><td class="py-1">${trx.nama_pembeli}</td><td class="py-1 pr-1 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
-                </tr>`;
-                tIn += trx.total_belanja;
-            });
-
-            dataPengeluaranSaatIni.forEach(exp => {
-                let tgl = formatTanggalCantik(exp.tanggal).substring(0, 6); 
-                tbOut.innerHTML += `<tr class="border-b border-gray-300">
-                    <td class="py-1 pl-1">${tgl}</td><td class="py-1">${exp.keterangan}</td><td class="py-1 pr-1 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
-                </tr>`;
-                tOut += exp.nominal;
-            });
-
-            document.getElementById('pdf-total-in').innerText = `Rp ${tIn.toLocaleString('id-ID')}`;
-            document.getElementById('pdf-total-out').innerText = `Rp ${tOut.toLocaleString('id-ID')}`;
-            let laba = tIn - tOut;
-            document.getElementById('pdf-laba').innerText = `Rp ${laba.toLocaleString('id-ID')}`;
-
-            let tglStart = document.getElementById('input-tgl-mulai-laba').value;
-            let tglEnd = document.getElementById('input-tgl-akhir-laba').value;
-            document.getElementById('pdf-tgl-laporan').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
-
-            const elemenPDF = document.getElementById('area-pdf-rekapan');
-            elemenPDF.classList.remove('hidden');
-            document.body.classList.add('print-mode-rekapan');
-
-            window.print();
-
-            setTimeout(() => {
-                elemenPDF.classList.add('hidden');
-                document.body.classList.remove('print-mode-rekapan');
-            }, 1500); 
-        }
-
-        function cetakPDFSingle() {
-            const tbody = document.getElementById('pdf-single-tbody');
-            const thead = document.getElementById('pdf-single-thead');
-            tbody.innerHTML = '';
-            
-            let tglStart = document.getElementById('input-tgl-mulai-rekap').value;
-            let tglEnd = document.getElementById('input-tgl-akhir-rekap').value;
-            document.getElementById('pdf-single-tgl').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
-
-            if (tabAktif === 'pemasukan') {
-                if (dataRekapanSaatIni.length === 0) { alert("Data Pemasukan Kosong!"); return; }
-                document.getElementById('pdf-single-title').innerText = "Laporan Pemasukan Jaja";
-                document.getElementById('pdf-single-total-label').innerText = "Total Pemasukan:";
-                document.getElementById('pdf-single-total').className = "font-bold text-xl text-emerald-700";
-                document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
-                
-                thead.innerHTML = `<th class="py-2 pl-2">Nota</th><th class="py-2">Pelanggan</th><th class="py-2">Waktu</th><th class="py-2 pr-2 text-right">Total</th>`;
-                
-                dataRekapanSaatIni.forEach(trx => {
-                    let tgl = formatTanggalCantik(trx.tanggal_transaksi);
-                    tbody.innerHTML += `<tr class="border-b border-gray-300">
-                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut || 0)}</td>
-                        <td class="py-2">${trx.nama_pembeli}</td>
-                        <td class="py-2">${tgl}</td>
-                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
-                    </tr>`;
-                });
-            } else {
-                if (dataPengeluaranSaatIni.length === 0) { alert("Data Pengeluaran Kosong!"); return; }
-                document.getElementById('pdf-single-title').innerText = "Laporan Pengeluaran Jaja";
-                document.getElementById('pdf-single-total-label').innerText = "Total Pengeluaran:";
-                document.getElementById('pdf-single-total').className = "font-bold text-xl text-rose-700";
-                document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
-                
-                thead.innerHTML = `<th class="py-2 pl-2">Tanggal</th><th class="py-2">Keterangan</th><th class="py-2 pr-2 text-right">Nominal</th>`;
-                
-                dataPengeluaranSaatIni.forEach(exp => {
-                    let tgl = formatTanggalCantik(exp.tanggal);
-                    tbody.innerHTML += `<tr class="border-b border-gray-300">
-                        <td class="py-2 pl-2">${tgl}</td>
-                        <td class="py-2">${exp.keterangan}</td>
-                        <td class="py-2 pr-2 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
-                    </tr>`;
-                });
-            }
-
-            const elemenPDF = document.getElementById('area-pdf-single');
-            elemenPDF.classList.remove('hidden');
-            document.body.classList.add('print-mode-single');
-
-            window.print();
-
-            setTimeout(() => {
-                elemenPDF.classList.add('hidden');
-                document.body.classList.remove('print-mode-single');
-            }, 1500); 
-        }
     </script>
 </body>
 </html>
