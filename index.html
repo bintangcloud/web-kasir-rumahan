@@ -18,19 +18,20 @@
 
         /* MODE PRINT KHUSUS STRUK DAN PDF (Sekarang ada 3 mode) */
         @media print {
-            body.print-mode-struk * { visibility: hidden; }
-            body.print-mode-struk #area-struk, body.print-mode-struk #area-struk * { visibility: visible; }
-            body.print-mode-struk #area-struk { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; margin: 0; padding: 0; }
-            
-            body.print-mode-rekapan * { visibility: hidden; }
-            body.print-mode-rekapan #area-pdf-rekapan, body.print-mode-rekapan #area-pdf-rekapan * { visibility: visible; }
-            body.print-mode-rekapan #area-pdf-rekapan { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
-            body.print-mode-single * { visibility: hidden; }
-            body.print-mode-single #area-pdf-single, body.print-mode-single #area-pdf-single * { visibility: visible; }
-            body.print-mode-single #area-pdf-single { position: absolute; left: 0; top: 0; width: 100%; background: white; margin: 0; padding: 10px; }
-
             .print\:hidden { display: none !important; }
+
+            /* MODE STRUK: Dibuat static dan normal biar HP gak error pas ganti kertas */
+            body.print-mode-struk { background-color: white; }
+            body.print-mode-struk .p-4.max-w-md.mx-auto { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+            body.print-mode-struk #area-struk { box-shadow: none; border: none; margin: 0; padding: 0; width: 100%; position: static; }
+            
+            /* MODE REKAPAN: Disembunyikan semua kecuali area-pdf-rekapan */
+            body.print-mode-rekapan > div:not(#area-pdf-rekapan) { display: none !important; }
+            body.print-mode-rekapan #area-pdf-rekapan { display: block !important; position: static; width: 100%; background: white; margin: 0; padding: 10px; }
+
+            /* MODE SINGLE: Disembunyikan semua kecuali area-pdf-single */
+            body.print-mode-single > div:not(#area-pdf-single) { display: none !important; }
+            body.print-mode-single #area-pdf-single { display: block !important; position: static; width: 100%; background: white; margin: 0; padding: 10px; }
         }
     </style>
 </head>
@@ -45,7 +46,7 @@
     </div>
 
     <div>
-        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-10 print:hidden flex justify-between items-center">
+        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-30 print:hidden flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-wide">Web Kasir</h1>
             <div class="flex gap-1.5">
                 <button onclick="bukaInputPengeluaran()" class="bg-rose-600 border border-rose-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
@@ -314,7 +315,9 @@
         const PIN_RAHASIA = "2222"; 
 
         function formatTanggalCantik(tglString) {
+            if(!tglString) return "";
             const d = new Date(tglString);
+            if(isNaN(d.getTime())) return "";
             const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
             const hari = String(d.getDate()).padStart(2, '0');
             const bln = bulan[d.getMonth()];
@@ -325,16 +328,19 @@
         }
 
         function formatTanggalUntukFilter(tglString) {
+            if(!tglString) return "";
             const d = new Date(tglString);
-            const hari = String(d.getDate()).padStart(2, '0');
-            const bln = String(d.getMonth() + 1).padStart(2, '0');
+            if(isNaN(d.getTime())) return "";
             const thn = d.getFullYear();
+            const bln = String(d.getMonth() + 1).padStart(2, '0');
+            const hari = String(d.getDate()).padStart(2, '0');
             return `${thn}-${bln}-${hari}`; 
         }
 
         function formatNota(num) { return "INV-" + String(num).padStart(4, '0'); }
 
         function isTanggalSesuai(tglItem, start, end) {
+            if (!tglItem) return false;
             if (!start && !end) return true;
             if (start && !end) return tglItem >= start;
             if (!start && end) return tglItem <= end;
@@ -612,12 +618,14 @@
             let totalIn = 0; let totalOut = 0;
 
             fetch('/api/transactions').then(res => res.json()).then(resTrx => {
-                let trxFiltered = resTrx.data.filter(t => isTanggalSesuai(formatTanggalUntukFilter(t.tanggal_transaksi), startTgl, endTgl));
+                let dataTrx = resTrx.data || [];
+                let trxFiltered = dataTrx.filter(t => isTanggalSesuai(formatTanggalUntukFilter(t.tanggal_transaksi), startTgl, endTgl));
                 trxFiltered.forEach(t => totalIn += t.total_belanja);
                 document.getElementById('laba-pemasukan').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
                 
                 fetch('/api/expenses').then(res => res.json()).then(resExp => {
-                    let expFiltered = resExp.data.filter(e => isTanggalSesuai(formatTanggalUntukFilter(e.tanggal), startTgl, endTgl));
+                    let dataExp = resExp.data || [];
+                    let expFiltered = dataExp.filter(e => isTanggalSesuai(formatTanggalUntukFilter(e.tanggal), startTgl, endTgl));
                     expFiltered.forEach(e => totalOut += e.nominal);
                     document.getElementById('laba-pengeluaran').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
 
@@ -643,12 +651,13 @@
             document.getElementById('input-tgl-akhir-rekap').value = ''; 
             
             fetch('/api/transactions').then(res => res.json()).then(res => { 
-                let dataUrut = res.data.sort((a, b) => a.id - b.id);
+                let dataTrx = res.data || [];
+                let dataUrut = dataTrx.sort((a, b) => a.id - b.id);
                 semuaTransaksi = dataUrut.map((trx, index) => { trx.nomor_urut = index + 1; return trx; }).reverse(); 
                 dataRekapanSaatIni = semuaTransaksi; 
                 
                 fetch('/api/expenses').then(res2 => res2.json()).then(res2 => {
-                    semuaPengeluaran = res2.data;
+                    semuaPengeluaran = res2.data || [];
                     dataPengeluaranSaatIni = semuaPengeluaran;
                     filterRekapan();
                 });
