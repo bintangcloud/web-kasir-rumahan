@@ -6,7 +6,7 @@
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* TENDANG PANAH DI INPUT ANGKA (Request Ibuk) */
+        
         input[type="number"]::-webkit-outer-spin-button, 
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -16,8 +16,13 @@
             -moz-appearance: textfield;
         }
 
-        /* MODE PRINT KHUSUS STRUK DAN PDF (Sekarang ada 3 mode) */
+        /* MODE PRINT KHUSUS STRUK DAN PDF*/
         @media print {
+
+            @page {
+                margin: 0;
+                size: 58mm auto; 
+            }
             .print\:hidden { display: none !important; }
 
             /* MODE STRUK: Dibuat static dan normal biar HP gak error pas ganti kertas */
