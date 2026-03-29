@@ -6,7 +6,7 @@
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* TENDANG PANAH DI INPUT ANGKA (Request Ibuk) */
+        /* TENDANG PANAH DI INPUT ANGKA */
         input[type="number"]::-webkit-outer-spin-button, 
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -16,241 +16,241 @@
             -moz-appearance: textfield;
         }
 
-        /* MODE PRINT KHUSUS STRUK DAN PDF */
+        /* SEMBUNYIKAN AREA PRINT DI LAYAR HP NORMAL */
+        @media screen {
+            #area-print-struk, #area-pdf-rekapan, #area-pdf-single { display: none !important; }
+        }
+
+        /* MODE PRINT KHUSUS (ANTI-ERROR DI MOBILE) */
         @media print {
-            .print\:hidden { display: none !important; }
+            /* Sembunyikan UI Aplikasi Utama */
+            #app-wrapper, .print\:hidden { display: none !important; }
+            body { background-color: white !important; padding: 0 !important; margin: 0 !important; }
 
-            /* MODE STRUK: Hapus position absolute biar aman di HP */
-            body.print-mode-struk { background-color: white; }
-            body.print-mode-struk > div:not(#area-struk-container) { display: none !important; }
-            body.print-mode-struk #area-struk { box-shadow: none; border: none; margin: 0; padding: 0; width: 100%; }
+            /* MODE 1: STRUK KASIR */
+            body.print-mode-struk #area-print-struk { display: block !important; width: 100%; color: black; font-family: sans-serif; }
+            
+            /* MODE 2: LAPORAN LABA RUGI FULL */
+            body.print-mode-rekapan #area-pdf-rekapan { display: block !important; width: 100%; color: black; font-family: sans-serif; }
 
-            /* MODE REKAPAN FULL (Tanpa Absolute) */
-            body.print-mode-rekapan { background-color: white; }
-            body.print-mode-rekapan > div:not(#area-pdf-rekapan) { display: none !important; }
-            body.print-mode-rekapan #area-pdf-rekapan { display: block !important; width: 100%; margin: 0; padding: 10px; position: static; }
-
-            /* MODE REKAPAN SINGLE (Tanpa Absolute) */
-            body.print-mode-single { background-color: white; }
-            body.print-mode-single > div:not(#area-pdf-single) { display: none !important; }
-            body.print-mode-single #area-pdf-single { display: block !important; width: 100%; margin: 0; padding: 10px; position: static; }
+            /* MODE 3: LAPORAN SATUAN (PEMASUKAN/PENGELUARAN AJA) */
+            body.print-mode-single #area-pdf-single { display: block !important; width: 100%; color: black; font-family: sans-serif; }
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-6 font-sans flex flex-col justify-between text-slate-800 relative z-0">
+<body class="bg-slate-50 min-h-screen pb-6 font-sans text-slate-800 relative z-0">
 
-    <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center print:hidden">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
-            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
-            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
-            <input type="password" id="input-pin" oninput="cekPinOtomatis()" maxlength="4" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
+    <div id="app-wrapper" class="flex flex-col justify-between min-h-screen">
+        
+        <div id="layar-login" class="fixed inset-0 bg-slate-900 z-[9999] flex justify-center items-center">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl w-10/12 max-w-sm text-center">
+                <h2 class="text-3xl font-extrabold text-slate-800 mb-1">Login</h2>
+                <p class="text-slate-500 mb-6 text-sm">Masukkan PIN</p>
+                <input type="password" id="input-pin" oninput="cekPinOtomatis()" maxlength="4" class="w-full text-center text-3xl tracking-[0.3em] p-4 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold" placeholder="••••">
+            </div>
         </div>
-    </div>
 
-    <div id="main-content">
-        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-30 print:hidden flex justify-between items-center">
+        <div class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-30 flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-wide">Web Kasir</h1>
             <div class="flex gap-1.5">
                 <button onclick="bukaInputPengeluaran()" class="bg-rose-600 border border-rose-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
-                    💸 Pengeluaran
+                    💸 Keluar
                 </button>
                 <button onclick="bukaRekapan()" class="bg-slate-600 border border-slate-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-slate-700 shadow transition flex items-center gap-1">
                     📈 Rekap
                 </button>
                 <button onclick="bukaLabaRugi()" class="bg-blue-600 border border-blue-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-blue-700 shadow transition flex items-center gap-1">
-                    📊 Laba Rugi
+                    📊 Laba
                 </button>
             </div>
         </div>
 
-        <div class="p-4 max-w-md mx-auto">
-            <label for="nama-pembeli" class="block text-slate-600 font-bold mb-1 ml-1 print:hidden text-sm">Nama Pelanggan:</label>
+        <div class="p-4 max-w-md mx-auto flex-1 w-full">
+            <label for="nama-pembeli" class="block text-slate-600 font-bold mb-1 ml-1 text-sm">Nama Pelanggan:</label>
             <input type="text" id="nama-pembeli" placeholder="Ketik nama di sini..." onkeypress="if(event.key === 'Enter') this.blur();"
-                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg print:hidden">
+                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg">
 
-            <div class="flex justify-between items-center mb-3 print:hidden">
+            <div class="flex justify-between items-center mb-3">
                 <h2 class="text-slate-700 font-bold">Pilih Jaja:</h2>
                 <button onclick="tambahMenu()" class="text-sm bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow active:bg-amber-600 font-semibold transition">
                     + Tambah Jaja
                 </button>
             </div>
             
-            <div id="tempat-jaja" class="grid grid-cols-3 gap-3 mb-8 print:hidden"></div>
+            <div id="tempat-jaja" class="grid grid-cols-3 gap-3 mb-8"></div>
 
-            <div id="area-struk-container">
-                <div id="area-struk" class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
-                    <div class="text-center mb-4 hidden print:block">
-                        <h2 class="font-bold text-xl">GINA & ULI</h2>
-                        <h2 class="font-bold text-xl">made by Artani</h2>
-                        <p class="text-sm text-slate-700">WA: 081-338-532-865 / 081-337-007-289</p> 
-                        <p class="text-sm text-slate-500 mt-1" id="struk-tanggal"></p>
-                        <p class="text-sm text-slate-800 font-semibold text-lg" id="struk-nota"></p>
-                        <div class="border-b border-dashed border-slate-400 my-2"></div>
-                        <p class="text-left font-bold" id="struk-nama-pembeli"></p>
-                        <div class="border-b border-dashed border-slate-400 my-2"></div>
+            <div class="bg-white p-5 rounded-2xl shadow-lg border border-slate-200">
+                <h2 class="text-slate-800 font-bold mb-3 border-b pb-2 flex justify-between"><span>Keranjang</span></h2>
+                <ul id="daftar-keranjang" class="mb-4 text-slate-600 space-y-2"><li class="text-sm italic text-center">Belum ada pesanan...</li></ul>
+                <div class="flex justify-between items-center font-bold text-xl border-t border-slate-300 pt-4 text-slate-800">
+                    <span>Total:</span><span id="total-harga" class="text-emerald-600">Rp 0</span>
+                </div>
+                <button onclick="simpanTransaksi()" class="w-full bg-emerald-600 text-white font-bold text-lg p-3 rounded-xl mt-5 active:bg-emerald-700 shadow-md transition">
+                    Simpan & Cetak Struk
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center text-slate-400 text-xs mt-8 pb-4">
+            Web App Kasir by <span class="font-semibold text-slate-500">starlight.dev</span>
+        </div>
+
+        <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
+            <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
+                <h2 class="font-bold text-lg text-slate-800 text-center mb-3">Konfirmasi Pesanan</h2>
+                <div class="text-sm text-slate-600 mb-2 border-b border-slate-200 pb-2">
+                    Pelanggan: <span id="konfirm-nama" class="font-bold text-slate-800"></span>
+                </div>
+                <ul id="konfirm-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto text-sm"></ul>
+                <div class="flex justify-between items-center font-bold text-lg text-slate-800 border-t border-slate-200 pt-2 mb-5">
+                    <span>Total:</span><span id="konfirm-total" class="text-emerald-600">Rp 0</span>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="tutupKonfirmasi()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
+                    <button onclick="prosesSimpanFinal()" class="w-1/2 bg-emerald-600 text-white font-bold p-3 rounded-xl active:bg-emerald-700 transition">Ya, Simpan!</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-pengeluaran" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
+            <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
+                <h2 class="font-bold text-xl text-rose-600 text-center mb-4">Catat Pengeluaran</h2>
+                
+                <label class="block text-slate-600 font-bold mb-1 text-sm">Beli apa?</label>
+                <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli gula..." onkeypress="if(event.key === 'Enter') this.blur();"
+                    class="w-full p-3 rounded-xl border border-slate-300 mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
+
+                <label class="block text-slate-600 font-bold mb-1 text-sm">Berapa harganya? (Rp)</label>
+                <input type="text" inputmode="numeric" id="input-nom-pengeluaran" placeholder="Misal: 15000" 
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeypress="if(event.key === 'Enter') this.blur();"
+                    class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
+
+                <div class="flex gap-3">
+                    <button onclick="tutupInputPengeluaran()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
+                    <button onclick="simpanPengeluaranFinal()" class="w-1/2 bg-rose-600 text-white font-bold p-3 rounded-xl active:bg-rose-700 transition">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+            <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[90vh] flex flex-col shadow-2xl relative">
+                <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
+                
+                <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
+
+                <div class="flex gap-1 mb-3 border-b-2 border-slate-100">
+                    <button id="tab-pemasukan" onclick="gantiTab('pemasukan')" class="flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition">Pemasukan</button>
+                    <button id="tab-pengeluaran" onclick="gantiTab('pengeluaran')" class="flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition">Pengeluaran</button>
+                </div>
+
+                <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="🔍 Cari nama..." class="w-full p-2 mb-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
+                <div class="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 block">Dari Tgl:</label>
+                        <input type="date" id="input-tgl-mulai-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
                     </div>
-
-                    <h2 class="text-slate-800 font-bold mb-3 border-b pb-2 flex justify-between print:hidden"><span>Keranjang</span></h2>
-                    <ul id="daftar-keranjang" class="mb-4 text-slate-600 space-y-2"><li class="text-sm italic text-center">Belum ada pesanan...</li></ul>
-                    <div class="flex justify-between items-center font-bold text-xl border-t border-slate-300 pt-4 text-slate-800 print:text-black">
-                        <span>Total:</span><span id="total-harga" class="text-emerald-600 print:text-black">Rp 0</span>
+                    <div class="border-l border-slate-300 mx-1"></div>
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 block">S/d Tgl:</label>
+                        <input type="date" id="input-tgl-akhir-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
                     </div>
-                    
-                    <div class="text-center mt-6 hidden print:block border-t border-dashed border-slate-400 pt-3">
-                        <p class="font-bold text-slate-800 text-lg">Terima Kasih!</p>
-                        <p class="text-sm text-slate-600">* Matur Suksma *</p>
-                        <p class="text-[10px] text-slate-400 mt-4 italic">Developed with ❤️ by starlight.dev</p>
+                </div>
+
+                <div id="area-list-pemasukan" class="overflow-y-auto flex-1">
+                    <ul id="list-rekapan" class="space-y-2 text-sm"></ul>
+                </div>
+
+                <div id="area-list-pengeluaran" class="overflow-y-auto flex-1 hidden">
+                    <ul id="list-pengeluaran" class="space-y-2 text-sm"></ul>
+                </div>
+
+                <div class="mt-3 border-t border-slate-200 pt-3 flex justify-between items-center">
+                    <span class="text-slate-600 font-bold text-sm" id="label-footer-rekap">Total Pemasukan:</span>
+                    <span class="font-extrabold text-emerald-600 text-lg" id="angka-footer-rekap">Rp 0</span>
+                </div>
+
+                <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
+                    🖨️ Cetak Laporan (Pemasukan)
+                </button>
+            </div>
+        </div>
+
+        <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
+            <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
+                <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
+                <h2 class="font-bold text-xl text-slate-800 text-center mb-4 border-b pb-3">Dashboard Laba Rugi</h2>
+                
+                <div class="flex gap-2 mb-5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div class="flex-1">
+                        <label class="text-xs font-bold text-slate-500 block mb-1">Dari Tgl:</label>
+                        <input type="date" id="input-tgl-mulai-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
                     </div>
-                    
-                    <button onclick="simpanTransaksi()" class="w-full bg-emerald-600 text-white font-bold text-lg p-3 rounded-xl mt-5 active:bg-emerald-700 shadow-md transition print:hidden">
-                        Simpan & Cetak Struk
-                    </button>
+                    <div class="flex-1">
+                        <label class="text-xs font-bold text-slate-500 block mb-1">S/d Tgl:</label>
+                        <input type="date" id="input-tgl-akhir-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
+                    </div>
                 </div>
+
+                <div class="space-y-3 mb-6">
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex justify-between items-center">
+                        <span class="font-bold text-emerald-700">Total Pemasukan</span>
+                        <span class="font-extrabold text-emerald-600 text-lg" id="laba-pemasukan">Rp 0</span>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex justify-between items-center">
+                        <span class="font-bold text-rose-700">Total Pengeluaran</span>
+                        <span class="font-extrabold text-rose-600 text-lg" id="laba-pengeluaran">Rp 0</span>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-300 p-4 rounded-xl flex justify-between items-center mt-2 shadow-sm">
+                        <span class="font-black text-blue-900 text-lg">LABA BERSIH</span>
+                        <span class="font-black text-blue-700 text-2xl" id="laba-bersih">Rp 0</span>
+                    </div>
+                </div>
+
+                <button onclick="cetakPDFLengkap()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
+                    🖨️ Cetak Laporan Keuangan
+                </button>
             </div>
+        </div>
+
+        <div id="modal-detail" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
+            <div class="bg-white p-6 rounded-2xl w-10/12 max-w-sm shadow-2xl relative">
+                <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">✖</button>
+                <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
+                <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
+                    <p id="detail-nota" class="font-bold text-lg text-slate-800"></p>
+                    <p id="detail-tgl"></p>
+                    <p id="detail-nama" class="font-bold mt-1 text-slate-800"></p>
+                </div>
+                <ul id="list-detail" class="space-y-3 mb-4 text-sm max-h-48 overflow-y-auto"></ul>
+                <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800 mb-5">
+                    <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
+                </div>
+                <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
+                    🖨️ Cetak Ulang Nota
+                </button>
+            </div>
+        </div>
+
+    </div> <div id="area-print-struk">
+        <div class="text-center mb-4 border-b border-dashed border-black pb-3">
+            <h2 class="font-bold text-xl">GINA & ULI</h2>
+            <h2 class="font-bold text-xl">made by Artani</h2>
+            <p class="text-sm">WA: 081-338-532-865 / 081-337-007-289</p> 
+            <p class="text-sm mt-2" id="print-struk-tanggal"></p>
+            <p class="text-lg font-bold" id="print-struk-nota"></p>
+            <p class="text-left font-bold mt-2" id="print-struk-nama"></p>
+        </div>
+        <ul id="print-struk-list" class="mb-4 space-y-2 text-sm"></ul>
+        <div class="flex justify-between items-center font-bold text-xl border-t border-black pt-4">
+            <span>Total:</span><span id="print-struk-total">Rp 0</span>
+        </div>
+        <div class="text-center mt-6 border-t border-dashed border-black pt-3">
+            <p class="font-bold text-lg">Terima Kasih!</p>
+            <p class="text-sm">* Matur Suksma *</p>
         </div>
     </div>
 
-    <div class="text-center text-slate-400 text-xs mt-8 pb-4 print:hidden">
-        Web App Kasir by <span class="font-semibold text-slate-500">starlight.dev</span>
-    </div>
-
-    <div id="modal-konfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
-            <h2 class="font-bold text-lg text-slate-800 text-center mb-3">Konfirmasi Pesanan</h2>
-            <div class="text-sm text-slate-600 mb-2 border-b border-slate-200 pb-2">
-                Pelanggan: <span id="konfirm-nama" class="font-bold text-slate-800"></span>
-            </div>
-            <ul id="konfirm-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto text-sm"></ul>
-            <div class="flex justify-between items-center font-bold text-lg text-slate-800 border-t border-slate-200 pt-2 mb-5">
-                <span>Total:</span><span id="konfirm-total" class="text-emerald-600">Rp 0</span>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="tutupKonfirmasi()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
-                <button onclick="prosesSimpanFinal()" class="w-1/2 bg-emerald-600 text-white font-bold p-3 rounded-xl active:bg-emerald-700 transition">Ya, Simpan!</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-pengeluaran" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-xl w-10/12 max-w-sm shadow-2xl relative">
-            <h2 class="font-bold text-xl text-rose-600 text-center mb-4">Catat Pengeluaran</h2>
-            
-            <label class="block text-slate-600 font-bold mb-1 text-sm">Beli apa?</label>
-            <input type="text" id="input-ket-pengeluaran" placeholder="Misal: Beli gula..." onkeypress="if(event.key === 'Enter') this.blur();"
-                class="w-full p-3 rounded-xl border border-slate-300 mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
-
-            <label class="block text-slate-600 font-bold mb-1 text-sm">Berapa harganya? (Rp)</label>
-            <input type="text" inputmode="numeric" id="input-nom-pengeluaran" placeholder="Misal: 15000" 
-                oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeypress="if(event.key === 'Enter') this.blur();"
-                class="w-full p-3 rounded-xl border border-slate-300 mb-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-base">
-
-            <div class="flex gap-3">
-                <button onclick="tutupInputPengeluaran()" class="w-1/2 bg-slate-200 text-slate-700 font-bold p-3 rounded-xl active:bg-slate-300 transition">Batal</button>
-                <button onclick="simpanPengeluaranFinal()" class="w-1/2 bg-rose-600 text-white font-bold p-3 rounded-xl active:bg-rose-700 transition">Simpan</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
-        <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[90vh] flex flex-col shadow-2xl relative">
-            <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
-            
-            <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
-
-            <div class="flex gap-1 mb-3 border-b-2 border-slate-100">
-                <button id="tab-pemasukan" onclick="gantiTab('pemasukan')" class="flex-1 font-bold pb-2 text-emerald-600 border-b-2 border-emerald-500 transition">Pemasukan</button>
-                <button id="tab-pengeluaran" onclick="gantiTab('pengeluaran')" class="flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition">Pengeluaran</button>
-            </div>
-
-            <input type="text" id="input-cari-rekap" oninput="filterRekapan()" onkeypress="if(event.key === 'Enter') this.blur();" placeholder="🔍 Cari nama..." class="w-full p-2 mb-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm">
-            <div class="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                <div class="flex-1">
-                    <label class="text-[10px] font-bold text-slate-500 block">Dari Tgl:</label>
-                    <input type="date" id="input-tgl-mulai-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
-                </div>
-                <div class="border-l border-slate-300 mx-1"></div>
-                <div class="flex-1">
-                    <label class="text-[10px] font-bold text-slate-500 block">S/d Tgl:</label>
-                    <input type="date" id="input-tgl-akhir-rekap" onchange="filterRekapan()" class="w-full bg-transparent focus:outline-none text-xs font-semibold text-slate-700 mt-1">
-                </div>
-            </div>
-
-            <div id="area-list-pemasukan" class="overflow-y-auto flex-1">
-                <ul id="list-rekapan" class="space-y-2 text-sm"></ul>
-            </div>
-
-            <div id="area-list-pengeluaran" class="overflow-y-auto flex-1 hidden">
-                <ul id="list-pengeluaran" class="space-y-2 text-sm"></ul>
-            </div>
-
-            <div class="mt-3 border-t border-slate-200 pt-3 flex justify-between items-center">
-                <span class="text-slate-600 font-bold text-sm" id="label-footer-rekap">Total Pemasukan:</span>
-                <span class="font-extrabold text-emerald-600 text-lg" id="angka-footer-rekap">Rp 0</span>
-            </div>
-
-            <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
-                🖨️ Cetak Laporan (Pemasukan)
-            </button>
-        </div>
-    </div>
-
-    <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
-            <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
-            <h2 class="font-bold text-xl text-slate-800 text-center mb-4 border-b pb-3">Dashboard Laba Rugi</h2>
-            
-            <div class="flex gap-2 mb-5 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div class="flex-1">
-                    <label class="text-xs font-bold text-slate-500 block mb-1">Dari Tgl:</label>
-                    <input type="date" id="input-tgl-mulai-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
-                </div>
-                <div class="flex-1">
-                    <label class="text-xs font-bold text-slate-500 block mb-1">S/d Tgl:</label>
-                    <input type="date" id="input-tgl-akhir-laba" onchange="hitungLabaRugi()" class="w-full p-1 border-b border-slate-300 bg-transparent focus:outline-none text-sm font-semibold">
-                </div>
-            </div>
-
-            <div class="space-y-3 mb-6">
-                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex justify-between items-center">
-                    <span class="font-bold text-emerald-700">Total Pemasukan</span>
-                    <span class="font-extrabold text-emerald-600 text-lg" id="laba-pemasukan">Rp 0</span>
-                </div>
-                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex justify-between items-center">
-                    <span class="font-bold text-rose-700">Total Pengeluaran</span>
-                    <span class="font-extrabold text-rose-600 text-lg" id="laba-pengeluaran">Rp 0</span>
-                </div>
-                <div class="bg-blue-50 border border-blue-300 p-4 rounded-xl flex justify-between items-center mt-2 shadow-sm">
-                    <span class="font-black text-blue-900 text-lg">LABA BERSIH</span>
-                    <span class="font-black text-blue-700 text-2xl" id="laba-bersih">Rp 0</span>
-                </div>
-            </div>
-
-            <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Laporan Keuangan
-            </button>
-        </div>
-    </div>
-
-    <div id="modal-detail" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
-        <div class="bg-white p-6 rounded-2xl w-10/12 max-w-sm shadow-2xl relative">
-            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">✖</button>
-            <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
-            <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
-                <p id="detail-nota" class="font-bold text-lg text-slate-800"></p>
-                <p id="detail-tgl"></p>
-                <p id="detail-nama" class="font-bold mt-1 text-slate-800"></p>
-            </div>
-            <ul id="list-detail" class="space-y-3 mb-4 text-sm max-h-48 overflow-y-auto"></ul>
-            <div class="flex justify-between items-center font-bold text-lg border-t border-slate-200 pt-3 text-slate-800 mb-5">
-                <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
-            </div>
-            <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Ulang Nota
-            </button>
-        </div>
-    </div>
-
-    <div id="area-pdf-rekapan" class="hidden bg-white text-black font-sans p-4">
+    <div id="area-pdf-rekapan">
         <h2 class="text-2xl font-bold mb-1 text-center border-b-2 border-black pb-2">Laporan Keuangan (GINA & ULI)</h2>
         <p id="pdf-tgl-laporan" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         
@@ -279,13 +279,13 @@
         </table>
         
         <div class="border-t-2 border-black pt-2 mt-6 w-full flex flex-col items-end text-sm">
-            <div class="w-full flex justify-between mb-1"><span class="font-semibold text-emerald-700">Total Pemasukan:</span> <span id="pdf-total-in" class="font-bold">Rp 0</span></div>
-            <div class="w-full flex justify-between mb-2"><span class="font-semibold text-rose-700">Total Pengeluaran:</span> <span id="pdf-total-out" class="font-bold">Rp 0</span></div>
-            <div class="w-full flex justify-between border-t border-black pt-2"><span class="font-bold text-base">Laba Bersih:</span> <span id="pdf-laba" class="font-extrabold text-lg text-blue-700">Rp 0</span></div>
+            <div class="w-full flex justify-between mb-1"><span class="font-semibold">Total Pemasukan:</span> <span id="pdf-total-in" class="font-bold">Rp 0</span></div>
+            <div class="w-full flex justify-between mb-2"><span class="font-semibold">Total Pengeluaran:</span> <span id="pdf-total-out" class="font-bold">Rp 0</span></div>
+            <div class="w-full flex justify-between border-t border-black pt-2"><span class="font-bold text-base">Laba Bersih:</span> <span id="pdf-laba" class="font-extrabold text-lg">Rp 0</span></div>
         </div>
     </div>
 
-    <div id="area-pdf-single" class="hidden bg-white text-black font-sans p-4">
+    <div id="area-pdf-single">
         <h2 class="text-xl font-bold mb-1 text-center border-b-2 border-black pb-2" id="pdf-single-title">Laporan</h2>
         <p id="pdf-single-tgl" class="mb-4 text-center text-sm font-semibold mt-2"></p>
         <table class="w-full text-left border-collapse mb-4 text-sm">
@@ -527,19 +527,43 @@
                 let subtotal = item.harga * item.qty;
                 total += subtotal;
                 daftar.innerHTML += `
-                    <li class="flex flex-col bg-slate-50 p-2 rounded-lg print:p-0 print:bg-white print:border-b print:border-slate-300 print:mb-2 print:pb-1">
+                    <li class="flex flex-col bg-slate-50 p-2 rounded-lg">
                         <div class="flex justify-between items-center w-full">
                             <div>
-                                <span class="font-semibold text-slate-800 print:text-black">${item.nama}</span>
-                                <span class="hidden print:inline text-sm text-slate-500 ml-2">x${item.qty}</span>
-                                <button onclick="ubahQtyKeranjang(${item.id})" class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 font-bold print:hidden active:bg-blue-200">Qty: ${item.qty} ✎</button>
+                                <span class="font-semibold text-slate-800">${item.nama}</span>
+                                <button onclick="ubahQtyKeranjang(${item.id})" class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 font-bold active:bg-blue-200">Qty: ${item.qty} ✎</button>
                             </div>
-                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">✖</button></div>
+                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded">✖</button></div>
                         </div>
-                        <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.qty} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
                     </li>`;
             });
             teksTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        // FUNGSI BANGUN HTML STRUK BUAT DIPRINT
+        function jalankanPrintStruk(nota, tgl, namaPelanggan, itemsKeranjang, totalHrg) {
+            document.getElementById('print-struk-nota').innerText = "No. Nota: " + nota;
+            document.getElementById('print-struk-tanggal').innerText = tgl;
+            document.getElementById('print-struk-nama').innerText = "Pelanggan: " + namaPelanggan;
+            
+            let htmlList = '';
+            itemsKeranjang.forEach(item => {
+                let sub = (item.harga * (item.qty || item.kuantitas));
+                htmlList += `
+                    <li class="border-b border-dashed border-slate-300 pb-2 mb-2">
+                        <div class="font-bold text-base">${item.nama || item.nama_jaja}</div>
+                        <div class="flex justify-between w-full text-sm mt-1">
+                            <span>${item.qty || item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span>
+                            <span class="font-bold">Rp ${sub.toLocaleString('id-ID')}</span>
+                        </div>
+                    </li>`;
+            });
+            document.getElementById('print-struk-list').innerHTML = htmlList;
+            document.getElementById('print-struk-total').innerText = `Rp ${totalHrg.toLocaleString('id-ID')}`;
+
+            // Reset class lalu print
+            document.body.className = "bg-slate-50 min-h-screen pb-6 font-sans text-slate-800 relative z-0 print-mode-struk";
+            window.print();
         }
 
         function simpanTransaksi() {
@@ -567,36 +591,24 @@
             const nama = document.getElementById('nama-pembeli').value;
             let totalHarga = 0; keranjang.forEach(item => totalHarga += (item.harga * item.qty));
             
+            // Tutup modal duluan biar kerasa cepet
+            tutupKonfirmasi();
+
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
                 
-                tutupKonfirmasi();
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
-                    let totalTransaksi = rData.data ? rData.data.length : res.id_nota; 
+                    let totalTransaksi = (rData.data || []).length || res.id_nota; 
                     
-                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(totalTransaksi);
-                    document.getElementById('struk-tanggal').innerText = res.tanggal;
-                    document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
+                    // Print Struk tanpa delay
+                    jalankanPrintStruk(formatNota(totalTransaksi), res.tanggal, nama, keranjang, totalHarga);
                     
-                    document.body.classList.add('print-mode-struk');
-                    window.print(); 
-                    
-                    setTimeout(function() {
-                        document.body.classList.remove('print-mode-struk');
-                        keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
-                    }, 1500); 
+                    // Bersihin UI Keranjang langsung
+                    keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
                 }).catch(e => {
-                    document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(res.id_nota || 999);
-                    document.getElementById('struk-tanggal').innerText = res.tanggal || formatTanggalCantik(new Date().toISOString());
-                    document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + nama;
-                    
-                    document.body.classList.add('print-mode-struk');
-                    window.print(); 
-                    
-                    setTimeout(function() {
-                        document.body.classList.remove('print-mode-struk');
-                        keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
-                    }, 1500);
+                    // Jalur darurat kalau inet ngelag
+                    jalankanPrintStruk(formatNota(res.id_nota || 999), res.tanggal || formatTanggalCantik(new Date().toISOString()), nama, keranjang, totalHarga);
+                    keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
                 });
             }).catch(e => { alert("Gagal menyimpan pesanan. Cek koneksi server!"); });
         }
@@ -767,26 +779,9 @@
 
         function cetakUlangStruk() {
             if (!detailTrxSaatIni || detailTrxSaatIni.items.length === 0) return;
-            document.getElementById('struk-nota').innerText = "No. Nota: " + formatNota(detailTrxSaatIni.nomor_urut);
-            document.getElementById('struk-tanggal').innerText = detailTrxSaatIni.tgl + " (Cetak Ulang)";
-            document.getElementById('struk-nama-pembeli').innerText = "Pelanggan: " + detailTrxSaatIni.nama;
-
-            const daftar = document.getElementById('daftar-keranjang');
-            daftar.innerHTML = ''; 
-            detailTrxSaatIni.items.forEach((item) => {
-                daftar.innerHTML += `<li class="border-b border-dashed border-slate-400 pb-2 mb-2 print:border-black print:pb-3 print:mb-3">
-                    <div class="font-bold text-black text-base">${item.nama_jaja}</div>
-                    <div class="flex justify-between w-full text-sm text-black mt-1">
-                        <span>${item.kuantitas} x Rp ${item.harga.toLocaleString('id-ID')}</span>
-                        <span class="font-bold">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
-                    </div>
-                </li>`;
-            });
-            document.getElementById('total-harga').innerText = `Rp ${detailTrxSaatIni.total.toLocaleString('id-ID')}`;
-
-            document.body.classList.add('print-mode-struk');
-            window.print();
-            setTimeout(function() { document.body.classList.remove('print-mode-struk'); renderKeranjang(); }, 1500); 
+            let itemsFormat = detailTrxSaatIni.items.map(i => ({ nama: i.nama_jaja, qty: i.kuantitas, harga: i.harga }));
+            jalankanPrintStruk(formatNota(detailTrxSaatIni.nomor_urut), detailTrxSaatIni.tgl + " (Cetak Ulang)", detailTrxSaatIni.nama, itemsFormat, detailTrxSaatIni.total);
+            tutupDetail();
         }
 
         function tutupDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
@@ -798,8 +793,8 @@
             return `Semua Waktu`;
         }
 
-        // --- FUNGSI PRINT (KEMBALI KE BAWAAN HP - NO DOWNLOAD LANGSUNG) ---
-        function cetakPDF() {
+        // --- FUNGSI PRINT LABA RUGI FULL ---
+        function cetakPDFFull() {
             const tbIn = document.getElementById('pdf-tbody-pemasukan');
             const tbOut = document.getElementById('pdf-tbody-pengeluaran');
             tbIn.innerHTML = ''; tbOut.innerHTML = '';
@@ -815,7 +810,7 @@
             dataPengeluaranSaatIni.forEach(exp => {
                 let tgl = formatTanggalCantik(exp.tanggal).substring(0, 6); 
                 tbOut.innerHTML += `<tr class="border-b border-gray-300">
-                    <td class="py-1 pl-1">${tgl}</td><td class="py-1">${exp.keterangan}</td><td class="py-1 pr-1 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
+                    <td class="py-1 pl-1">${tgl}</td><td class="py-1">${exp.keterangan}</td><td class="py-1 pr-1 text-right font-semibold">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
                 </tr>`;
                 tOut += exp.nominal;
             });
@@ -829,18 +824,12 @@
             let tglEnd = document.getElementById('input-tgl-akhir-laba').value;
             document.getElementById('pdf-tgl-laporan').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
 
-            const elemenPDF = document.getElementById('area-pdf-rekapan');
-            elemenPDF.classList.remove('hidden');
-            
-            document.body.classList.add('print-mode-rekapan');
-            window.print(); 
-
-            setTimeout(() => {
-                elemenPDF.classList.add('hidden');
-                document.body.classList.remove('print-mode-rekapan');
-            }, 1000); 
+            // Reset class lalu pasang print-mode-rekapan
+            document.body.className = "bg-slate-50 min-h-screen pb-6 font-sans text-slate-800 relative z-0 print-mode-rekapan";
+            window.print();
         }
 
+        // --- FUNGSI PRINT SINGLE REKAPAN ---
         function cetakPDFSingle() {
             const tbody = document.getElementById('pdf-single-tbody');
             const thead = document.getElementById('pdf-single-thead');
@@ -854,47 +843,36 @@
                 if (dataRekapanSaatIni.length === 0) { alert("Data Pemasukan Kosong!"); return; }
                 document.getElementById('pdf-single-title').innerText = "Laporan Pemasukan Jaja";
                 document.getElementById('pdf-single-total-label').innerText = "Total Pemasukan:";
-                document.getElementById('pdf-single-total').className = "font-bold text-xl text-emerald-700";
                 document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
-                
-                thead.innerHTML = `<th class="py-2 pl-2">Nota</th><th class="py-2">Pelanggan</th><th class="py-2 pr-2 text-right">Total</th>`;
+                thead.innerHTML = `<th class="py-2 pl-2 border-b-2 border-black">Nota</th><th class="py-2 border-b-2 border-black">Pelanggan</th><th class="py-2 pr-2 text-right border-b-2 border-black">Total</th>`;
                 
                 dataRekapanSaatIni.forEach(trx => {
-                    tbody.innerHTML += `<tr class="border-b border-gray-300">
-                        <td class="py-2 pl-2">${formatNota(trx.nomor_urut || 0)}</td>
-                        <td class="py-2">${trx.nama_pembeli}</td>
-                        <td class="py-2 pr-2 text-right font-semibold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
+                    tbody.innerHTML += `<tr>
+                        <td class="py-1 pl-2 border-b border-gray-300">${formatNota(trx.nomor_urut || 0)}</td>
+                        <td class="py-1 border-b border-gray-300">${trx.nama_pembeli}</td>
+                        <td class="py-1 pr-2 text-right font-semibold border-b border-gray-300">Rp ${trx.total_belanja.toLocaleString('id-ID')}</td>
                     </tr>`;
                 });
             } else {
                 if (dataPengeluaranSaatIni.length === 0) { alert("Data Pengeluaran Kosong!"); return; }
                 document.getElementById('pdf-single-title').innerText = "Laporan Pengeluaran Jaja";
                 document.getElementById('pdf-single-total-label').innerText = "Total Pengeluaran:";
-                document.getElementById('pdf-single-total').className = "font-bold text-xl text-rose-700";
                 document.getElementById('pdf-single-total').innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
-                
-                thead.innerHTML = `<th class="py-2 pl-2">Tanggal</th><th class="py-2">Keterangan</th><th class="py-2 pr-2 text-right">Nominal</th>`;
+                thead.innerHTML = `<th class="py-2 pl-2 border-b-2 border-black">Tanggal</th><th class="py-2 border-b-2 border-black">Keterangan</th><th class="py-2 pr-2 text-right border-b-2 border-black">Nominal</th>`;
                 
                 dataPengeluaranSaatIni.forEach(exp => {
                     let tgl = formatTanggalCantik(exp.tanggal).substring(0, 6);
-                    tbody.innerHTML += `<tr class="border-b border-gray-300">
-                        <td class="py-2 pl-2">${tgl}</td>
-                        <td class="py-2">${exp.keterangan}</td>
-                        <td class="py-2 pr-2 text-right font-semibold text-rose-700">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
+                    tbody.innerHTML += `<tr>
+                        <td class="py-1 pl-2 border-b border-gray-300">${tgl}</td>
+                        <td class="py-1 border-b border-gray-300">${exp.keterangan}</td>
+                        <td class="py-1 pr-2 text-right font-semibold border-b border-gray-300">Rp ${exp.nominal.toLocaleString('id-ID')}</td>
                     </tr>`;
                 });
             }
 
-            const elemenPDF = document.getElementById('area-pdf-single');
-            elemenPDF.classList.remove('hidden');
-            
-            document.body.classList.add('print-mode-single');
+            // Reset class lalu pasang print-mode-single
+            document.body.className = "bg-slate-50 min-h-screen pb-6 font-sans text-slate-800 relative z-0 print-mode-single";
             window.print(); 
-
-            setTimeout(() => {
-                elemenPDF.classList.add('hidden');
-                document.body.classList.remove('print-mode-single');
-            }, 1000); 
         }
     </script>
 </body>
