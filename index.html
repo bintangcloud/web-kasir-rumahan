@@ -464,14 +464,45 @@
         }
 
         function tambahMenu() {
-            if (document.activeElement) document.activeElement.blur(); 
-            let nama = prompt("Masukkan nama Jaja / Barang baru:");
-            if (!nama) return;
-            let harga = prompt("Masukkan harganya (angka saja, misal: 15000):");
-            if (!harga || isNaN(harga)) { alert("Harga harus berupa angka!"); return; }
-            fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: nama, Harga: parseInt(harga) })
-            }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
+            document.getElementById("modal-tambah-menu").classList.remove("hidden");
         }
+
+        function tutupModalMenu() {
+            document.getElementById("modal-tambah-menu").classList.add("hidden");
+        }
+
+        function simpanMenuBaru() {
+            let nama = document.getElementById("input-nama-menu").value;
+            let harga = document.getElementById("input-harga-menu").value;
+
+            if (!nama) {
+                alert("Nama belum diisi!");
+                return;
+            }
+
+            if (!harga || isNaN(harga)) {
+                alert("Harga tidak valid!");
+                return;
+            }
+
+        fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Nama_Jaja: nama,
+                Harga: parseInt(harga)
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.pesan);
+            tutupModalMenu();
+            muatMenu();
+
+            document.getElementById("input-nama-menu").value = "";
+            document.getElementById("input-harga-menu").value = "";
+        });
+    }
 
         function editMenuDariDatabase(id, namaLama, hargaLama) {
             if (document.activeElement) document.activeElement.blur(); 
@@ -906,5 +937,34 @@
             }, 1500); 
         }
     </script>
+    <div id="modal-tambah-menu" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+  <div class="bg-white w-11/12 max-w-sm p-5 rounded-2xl shadow-2xl">
+
+    <h2 class="text-lg font-bold text-slate-800 mb-4">Tambah Jaja Baru</h2>
+
+    <label class="text-sm font-semibold text-slate-600">Nama Jaja</label>
+    <input id="input-nama-menu" type="text"
+      class="w-full mt-1 mb-3 p-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+      placeholder="Contoh: Es Teh">
+
+    <label class="text-sm font-semibold text-slate-600">Harga</label>
+    <input id="input-harga-menu" type="number"
+      class="w-full mt-1 mb-5 p-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+      placeholder="Contoh: 5000">
+
+    <div class="flex gap-2">
+      <button onclick="tutupModalMenu()" 
+        class="w-1/2 bg-slate-200 p-3 rounded-xl font-bold">
+        Batal
+      </button>
+
+      <button onclick="simpanMenuBaru()" 
+        class="w-1/2 bg-emerald-600 text-white p-3 rounded-xl font-bold">
+        Simpan
+      </button>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
