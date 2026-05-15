@@ -20,7 +20,7 @@
         .animate-pop {
             animation: pop 0.2s ease-out;
         }
-        
+
         input[type="number"]::-webkit-outer-spin-button, 
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -322,6 +322,8 @@
     </div>
 
     <script>
+        let modeEdit = false;
+        let editId = null;
         let keranjang = [];
         let semuaTransaksi = [];
         let dataRekapanSaatIni = []; 
@@ -479,11 +481,24 @@
         }
 
         function tambahMenu() {
+            modeEdit = false;
+            editId = null;
+
             document.getElementById("modal-tambah-menu").classList.remove("hidden");
-        }
+
+            document.getElementById("input-nama-menu").value = "";
+            document.getElementById("input-harga-menu").value = "";
+
+            document.querySelector("#modal-tambah-menu h2").innerText = "Tambah Jaja Baru";
+            document.querySelector("#modal-tambah-menu button.bg-emerald-600").innerText = "Simpan";
+}
 
         function tutupModalMenu() {
             document.getElementById("modal-tambah-menu").classList.add("hidden");
+
+            modeEdit = false;
+            editId = null;
+        
         }
 
         function simpanMenuBaru() {
@@ -500,34 +515,55 @@
                 return;
             }
 
-        fetch('/api/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                Nama_Jaja: nama,
-                Harga: parseInt(harga)
+            // ===== MODE EDIT =====
+            if (modeEdit) {
+                fetch('/api/products/' + editId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        Nama_Jaja: nama,
+                        Harga: parseInt(harga)
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    showToast("Jaja berhasil diupdate!", "success");
+                    tutupModalMenu();
+                    muatMenu();
+                });
+
+                return;
+            }
+
+            // ===== MODE TAMBAH =====
+            fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Nama_Jaja: nama,
+                    Harga: parseInt(harga)
+                })
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            showToast(data.pesan, data.status === "success" ? "success" : "error");
-            tutupModalMenu();
-            muatMenu();
+            .then(res => res.json())
+            .then(data => {
+                showToast(data.pesan, data.status === "success" ? "success" : "error");
+                tutupModalMenu();
+                muatMenu();
+            });
+}
 
-            document.getElementById("input-nama-menu").value = "";
-            document.getElementById("input-harga-menu").value = "";
-        });
-    }
+        function editMenuDariDatabase(id, nama, harga) {
+            modeEdit = true;
+            editId = id;
 
-        function editMenuDariDatabase(id, namaLama, hargaLama) {
-            if (document.activeElement) document.activeElement.blur(); 
-            let namaBaru = prompt("Edit nama Jaja:", namaLama);
-            if (namaBaru === null || namaBaru.trim() === "") return;
-            let hargaBaru = prompt("Edit harga " + namaBaru + ":", hargaLama);
-            if (hargaBaru === null || isNaN(hargaBaru) || hargaBaru.trim() === "") return;
-            fetch('/api/products/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: namaBaru, Harga: parseInt(hargaBaru) })
-            }).then(res => res.json()).then(data => { showToast(data.pesan, data.status === "success" ? "success" : "error"); muatMenu(); });
-        }
+            document.getElementById("modal-tambah-menu").classList.remove("hidden");
+
+            document.getElementById("input-nama-menu").value = nama;
+            document.getElementById("input-harga-menu").value = harga;
+
+            document.querySelector("#modal-tambah-menu h2").innerText = "Edit Jaja";
+            document.querySelector("#modal-tambah-menu button.bg-emerald-600").innerText = "Update";
+}
 
         function hapusMenuDariDatabase(id, nama) {
             let konfirmasi = confirm(`Yakin ingin menghapus menu "${nama}"?`);
