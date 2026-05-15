@@ -360,7 +360,7 @@
                 if(pin === PIN_RAHASIA) { 
                     document.getElementById('layar-login').classList.add('hidden');
                     muatMenu(); inputField.value = ''; 
-                } else { alert("PIN Salah! Coba lagi."); inputField.value = ''; }
+                } else { showToast("PIN Salah! Coba lagi.", "error"); inputField.value = ''; }
             }
         }
 
@@ -376,15 +376,16 @@
             let ket = document.getElementById('input-ket-pengeluaran').value;
             let nom = document.getElementById('input-nom-pengeluaran').value;
             
-            if (!ket || ket.trim() === "") { alert("Keterangan belum diisi!"); return; }
-            if (!nom || isNaN(nom) || nom.trim() === "") { alert("Nominal harus diisi angka!"); return; }
+            if (!ket || ket.trim() === "") { showToast("Keterangan belum diisi!", "error"); return; }
+            if (!nom || isNaN(nom) || nom.trim() === "") { showToast("Nominal harus diisi angka!", "error"); return; }
 
             fetch('/api/expenses', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ keterangan: ket, nominal: parseInt(nom) })
             }).then(res => res.json()).then(data => { 
-                alert(data.pesan); tutupInputPengeluaran();
+                showToast(data.pesan, data.status === "success" ? "success" : "error");
+                tutupInputPengeluaran();
             });
         }
 
@@ -476,12 +477,12 @@
             let harga = document.getElementById("input-harga-menu").value;
 
             if (!nama) {
-                alert("Nama belum diisi!");
+                showToast("Nama belum diisi!", "error");
                 return;
             }
 
             if (!harga || isNaN(harga)) {
-                alert("Harga tidak valid!");
+                showToast("Harga tidak valid!", "error");
                 return;
             }
 
@@ -495,7 +496,7 @@
         })
         .then(res => res.json())
         .then(data => {
-            alert(data.pesan);
+            showToast(data.pesan, data.status === "success" ? "success" : "error");
             tutupModalMenu();
             muatMenu();
 
@@ -511,13 +512,13 @@
             let hargaBaru = prompt("Edit harga " + namaBaru + ":", hargaLama);
             if (hargaBaru === null || isNaN(hargaBaru) || hargaBaru.trim() === "") return;
             fetch('/api/products/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ Nama_Jaja: namaBaru, Harga: parseInt(hargaBaru) })
-            }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); });
+            }).then(res => res.json()).then(data => { showToast(data.pesan, data.status === "success" ? "success" : "error"); muatMenu(); });
         }
 
         function hapusMenuDariDatabase(id, nama) {
             let konfirmasi = confirm(`Yakin ingin menghapus menu "${nama}"?`);
             if (konfirmasi) {
-                fetch('/api/products/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); muatMenu(); })
+                fetch('/api/products/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { showToast(data.pesan, data.status === "success" ? "success" : "error"); muatMenu(); })
             }
         }
 
@@ -550,7 +551,7 @@
                         barang.qty = parseInt(qtyBaru);
                         renderKeranjang();
                     } else if (parseInt(qtyBaru) === 0) { hapusDariKeranjang(id); } 
-                    else { alert("Jumlah harus berupa angka!"); }
+                    else { showToast("Jumlah harus berupa angka!", "error"); }
                 }
             }
         }
@@ -582,8 +583,8 @@
 
         function simpanTransaksi() {
             const nama = document.getElementById('nama-pembeli').value;
-            if (nama === "") { alert("Isi nama pelanggan!"); return; }
-            if (keranjang.length === 0) { alert("Keranjang kosong!"); return; }
+            if (nama === "") { showToast("Isi nama pelanggan!", "error"); return; }
+            if (keranjang.length === 0) { showToast("Keranjang kosong!", "error"); return; }
             
             document.getElementById('modal-konfirmasi').classList.remove('hidden');
             document.getElementById('konfirm-nama').innerText = nama;
@@ -607,7 +608,7 @@
             
             fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_pembeli: nama, total_harga: totalHarga, keranjang: keranjang.map(item => ({ id: item.id, qty: item.qty })) })
             }).then(res => res.json()).then(res => {
-                
+                showToast("Pesanan berhasil disimpan!", "success");
                 tutupKonfirmasi();
                 fetch('/api/transactions').then(r => r.json()).then(rData => {
                     let totalTransaksi = rData.data ? rData.data.length : res.id_nota; 
@@ -636,7 +637,7 @@
                         keranjang = []; document.getElementById('nama-pembeli').value = ''; renderKeranjang();
                     }, 1500);
                 });
-            }).catch(e => { alert("Gagal menyimpan pesanan. Cek koneksi server!"); });
+            }).catch(e => { showToast("Gagal menyimpan pesanan. Cek koneksi server!", "error"); });
         }
 
         function bukaLabaRugi() {
@@ -767,18 +768,18 @@
             let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus nota ini:");
             if (inputPin === PIN_RAHASIA) {
                 if (confirm("Yakin mau hapus nota " + formatNota(nomor_urut) + "? Data ini bakal hilang selamanya!")) {
-                    fetch('/api/transactions/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); bukaRekapan(); });
+                    fetch('/api/transactions/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { showToast(data.pesan, data.status === "success" ? "success" : "error"); bukaRekapan(); });
                 }
-            } else if (inputPin !== null) { alert("PIN Salah! Gagal menghapus nota."); }
+            } else if (inputPin !== null) { showToast("PIN Salah! Gagal menghapus nota.", "error"); }
         }
 
         function hapusPengeluaran(id, ket) {
             let inputPin = prompt("Masukkan PIN Rahasia untuk menghapus bon pengeluaran ini:");
             if (inputPin === PIN_RAHASIA) {
                 if (confirm(`Yakin mau hapus pengeluaran "${ket}"?`)) {
-                    fetch('/api/expenses/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { alert(data.pesan); bukaRekapan(); });
+                    fetch('/api/expenses/' + id, { method: 'DELETE' }).then(res => res.json()).then(data => { showToast(data.pesan, data.status === "success" ? "success" : "error"); bukaRekapan(); });
                 }
-            } else if (inputPin !== null) { alert("PIN Salah! Gagal menghapus."); }
+            } else if (inputPin !== null) { showToast("PIN Salah! Gagal menghapus.", "error"); }
         }
 
         function lihatDetail(id, nomor_urut, nama, tgl, total) {
@@ -879,6 +880,41 @@
             }, 1500); 
         }
 
+        function showToast(message, type = "success") {
+            const container = document.getElementById("toast-container");
+
+            const icons = {
+                success: "✔",
+                error: "✖",
+                info: "ℹ"
+            };
+
+            const colors = {
+                success: "bg-emerald-500",
+                error: "bg-rose-500",
+                info: "bg-slate-700"
+            };
+
+            const toast = document.createElement("div");
+            toast.className = `
+                ${colors[type]}
+                text-white px-4 py-3 rounded-xl shadow-lg
+                animate-fade-in flex items-center gap-2
+                text-sm font-semibold
+            `;
+
+            toast.innerHTML = `<span>${icons[type]}</span> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateX(20px)";
+                toast.style.transition = "all 0.3s ease";
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+}   
+
         function cetakPDFSingle() {
             const tbody = document.getElementById('pdf-single-tbody');
             const thead = document.getElementById('pdf-single-thead');
@@ -889,7 +925,7 @@
             document.getElementById('pdf-single-tgl').innerText = `Rentang Waktu: ${formatJudulTanggal(tglStart, tglEnd)}`;
 
             if (tabAktif === 'pemasukan') {
-                if (dataRekapanSaatIni.length === 0) { alert("Data Pemasukan Kosong!"); return; }
+                if (dataRekapanSaatIni.length === 0) { showToast("Data Pemasukan Kosong!", "error"); return; }
                 document.getElementById('pdf-single-title').innerText = "Laporan Pemasukan Jaja";
                 document.getElementById('pdf-single-total-label').innerText = "Total Pemasukan:";
                 document.getElementById('pdf-single-total').className = "font-bold text-xl text-emerald-700";
@@ -907,7 +943,7 @@
                     </tr>`;
                 });
             } else {
-                if (dataPengeluaranSaatIni.length === 0) { alert("Data Pengeluaran Kosong!"); return; }
+                if (dataPengeluaranSaatIni.length === 0) { showToast("Data Pengeluaran Kosong!", "error"); return; }
                 document.getElementById('pdf-single-title').innerText = "Laporan Pengeluaran Jaja";
                 document.getElementById('pdf-single-total-label').innerText = "Total Pengeluaran:";
                 document.getElementById('pdf-single-total').className = "font-bold text-xl text-rose-700";
@@ -945,7 +981,7 @@
     <label class="text-sm font-semibold text-slate-600">Nama Jaja</label>
     <input id="input-nama-menu" type="text"
       class="w-full mt-1 mb-3 p-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-      placeholder="Contoh: Es Teh">
+      placeholder="Contoh: Jaja Kecil">
 
     <label class="text-sm font-semibold text-slate-600">Harga</label>
     <input id="input-harga-menu" type="number"
@@ -966,5 +1002,7 @@
 
   </div>
 </div>
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[99999] space-y-2"></div>    
 </body>
 </html>
