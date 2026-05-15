@@ -55,13 +55,13 @@
             <h1 class="text-lg font-bold tracking-wide">Web Kasir</h1>
             <div class="flex gap-1.5">
                 <button onclick="bukaInputPengeluaran()" class="bg-rose-600 border border-rose-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-rose-700 shadow transition flex items-center gap-1">
-                    💸 Pengeluaran
+                    <span class="text-sm">▣</span> Pengeluaran
                 </button>
                 <button onclick="bukaRekapan()" class="bg-slate-600 border border-slate-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-slate-700 shadow transition flex items-center gap-1">
-                    📈 Rekap Pemasukan dan Pengeluaran
+                    <span class="text-sm">▤</span> Rekap Pemasukan dan Pengeluaran
                 </button>
                 <button onclick="bukaLabaRugi()" class="bg-blue-600 border border-blue-500 px-2.5 py-1.5 rounded-lg text-xs font-bold active:bg-blue-700 shadow transition flex items-center gap-1">
-                    📊 Laba Rugi
+                    <span class="text-sm">◫</span> Laba Rugi
                 </button>
             </div>
         </div>
@@ -154,7 +154,7 @@
 
     <div id="modal-rekapan" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center print:hidden">
         <div class="bg-white p-5 rounded-2xl w-11/12 max-w-md max-h-[90vh] flex flex-col shadow-2xl relative">
-            <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
+            <button onclick="tutupRekapan()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">&times;</button>
             
             <h2 class="font-bold text-lg text-slate-800 mb-4">Catatan Harian</h2>
 
@@ -190,14 +190,14 @@
             </div>
 
             <button onclick="cetakPDFSingle()" class="w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm" id="btn-unduh-single">
-                🖨️ Cetak Laporan (Pemasukan)
+                ⎙ Cetak Laporan (Pemasukan)
             </button>
         </div>
     </div>
 
     <div id="modal-laba" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
         <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl relative">
-            <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">✖</button>
+            <button onclick="tutupLabaRugi()" class="absolute top-4 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100 transition z-10">&times;</button>
             <h2 class="font-bold text-xl text-slate-800 text-center mb-4 border-b pb-3">Dashboard Laba Rugi</h2>
             
             <div class="flex gap-2 mb-5 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -227,14 +227,14 @@
             </div>
 
             <button onclick="cetakPDF()" class="w-full bg-slate-800 text-white font-bold text-lg p-3 rounded-xl active:bg-slate-900 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Laporan Keuangan
+                ⎙ Cetak Laporan Keuangan
             </button>
         </div>
     </div>
 
     <div id="modal-detail" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center print:hidden">
         <div class="bg-white p-6 rounded-2xl w-10/12 max-w-sm shadow-2xl relative">
-            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">✖</button>
+            <button onclick="tutupDetail()" class="absolute top-3 right-4 text-rose-500 bg-rose-50 rounded-lg font-bold text-lg px-3 py-1 active:bg-rose-100">&times;</button>
             <h2 class="font-bold text-lg text-slate-800 text-center mb-1">Rincian Nota</h2>
             <div class="text-center text-sm text-slate-500 mb-4 border-b border-slate-200 pb-3">
                 <p id="detail-nota" class="font-bold text-lg text-slate-800"></p>
@@ -246,7 +246,7 @@
                 <span>Total:</span><span id="detail-total" class="text-emerald-600">Rp 0</span>
             </div>
             <button onclick="cetakUlangStruk()" class="w-full bg-blue-600 text-white font-bold text-lg p-3 rounded-xl active:bg-blue-700 shadow-md transition flex justify-center items-center gap-2">
-                🖨️ Cetak Ulang Nota
+                ⎙ Cetak Ulang Nota
             </button>
         </div>
     </div>
@@ -410,7 +410,7 @@
                 angkaFooter.innerText = `Rp ${globalTotalPemasukan.toLocaleString('id-ID')}`;
                 
                 btnUnduh.className = "w-full mt-3 bg-emerald-600 text-white font-bold py-2.5 rounded-xl active:bg-emerald-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "🖨️ Cetak Laporan (Pemasukan)";
+                btnUnduh.innerText = "⎙ Cetak Laporan (Pemasukan)";
             } else {
                 tabOut.className = "flex-1 font-bold pb-2 text-rose-500 border-b-2 border-rose-500 transition";
                 tabIn.className = "flex-1 font-bold pb-2 text-slate-400 border-b-2 border-transparent transition";
@@ -422,7 +422,7 @@
                 angkaFooter.innerText = `Rp ${globalTotalPengeluaran.toLocaleString('id-ID')}`;
 
                 btnUnduh.className = "w-full mt-3 bg-rose-600 text-white font-bold py-2.5 rounded-xl active:bg-rose-700 shadow transition flex justify-center items-center gap-2 text-sm";
-                btnUnduh.innerText = "🖨️ Cetak Laporan (Pengeluaran)";
+                btnUnduh.innerText = "⎙ Cetak Laporan (Pengeluaran)";
             }
         }
 
@@ -438,7 +438,7 @@
                     <button onclick="editMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" 
                             class="absolute top-1 left-1 text-blue-500 font-bold text-sm p-1.5 active:text-blue-700 transition z-10" title="Edit Menu">✏️</button>
                     <button onclick="hapusMenuDariDatabase(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}')" 
-                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition z-10" title="Hapus Menu">✖</button>
+                            class="absolute top-1 right-1 text-rose-500 font-bold text-sm p-1.5 active:text-rose-700 transition z-10" title="Hapus Menu">&times;</button>
                     <div onclick="tambahKeKeranjang(${jaja.Id_Jaja}, '${jaja.Nama_Jaja}', ${jaja.Harga})" class="cursor-pointer w-full h-full p-2 pt-8 pb-3">
                         <div class="font-bold text-slate-800 text-sm leading-tight">${jaja.Nama_Jaja}</div>
                         <div class="text-emerald-600 font-bold text-xs mt-1">Rp ${jaja.Harga.toLocaleString('id-ID')}</div>
@@ -451,7 +451,7 @@
             const tempatJaja = document.getElementById('tempat-jaja');
             const cacheData = localStorage.getItem('cache_jaja_ibuk');
             if (cacheData) { renderKeLayar(JSON.parse(cacheData)); } 
-            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-3">Memuat data dari satelit... 🚀</div>'; }
+            else { tempatJaja.innerHTML = '<div class="text-center text-slate-400 col-span-3">Memuat data... ⟳</div>'; }
 
             try {
                 const res = await fetch('/api/products');
@@ -541,7 +541,7 @@
                                 <span class="hidden print:inline text-sm text-slate-500 ml-2">x${item.qty}</span>
                                 <button onclick="ubahQtyKeranjang(${item.id})" class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 font-bold print:hidden active:bg-blue-200">Qty: ${item.qty} ✎</button>
                             </div>
-                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">✖</button></div>
+                            <div class="flex items-center gap-3"><div class="font-semibold text-slate-700 print:hidden">Rp ${subtotal.toLocaleString('id-ID')}</div><button onclick="hapusDariKeranjang(${item.id})" class="text-rose-500 font-bold text-lg px-2 active:bg-rose-100 rounded print:hidden">&times;</button></div>
                         </div>
                         <div class="hidden print:flex justify-between w-full text-sm mt-1 text-black"><span>${item.qty} x Rp ${item.harga.toLocaleString('id-ID')}</span><span class="font-semibold">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
                     </li>`;
@@ -706,7 +706,7 @@
                             <span class="text-emerald-600 font-bold">Rp ${trx.total_belanja.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
-                    <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">✖</button>
+                    <button onclick="hapusTransaksi(${trx.id}, ${trx.nomor_urut})" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Nota">&times;</button>
                 </li>`;
                 globalTotalPemasukan += trx.total_belanja;
             });
@@ -723,7 +723,7 @@
                             <span class="text-rose-500 font-bold">Rp ${exp.nominal.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
-                    <button onclick="hapusPengeluaran(${exp.id}, '${exp.keterangan}')" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Bon">✖</button>
+                    <button onclick="hapusPengeluaran(${exp.id}, '${exp.keterangan}')" class="text-rose-400 hover:text-rose-600 bg-rose-50 p-2 rounded-lg transition" title="Hapus Bon">&times;</button>
                 </li>`;
                 globalTotalPengeluaran += exp.nominal;
             });
