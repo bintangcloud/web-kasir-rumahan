@@ -6,6 +6,20 @@
     <title>Kasir Jaja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+                @keyframes pop {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-pop {
+            animation: pop 0.2s ease-out;
+        }
         
         input[type="number"]::-webkit-outer-spin-button, 
         input[type="number"]::-webkit-inner-spin-button {
@@ -881,39 +895,48 @@
         }
 
         function showToast(message, type = "success") {
-            const container = document.getElementById("toast-container");
+        const container = document.getElementById("toast-container");
 
-            const icons = {
-                success: "✔",
-                error: "✖",
-                info: "ℹ"
-            };
+        const colors = {
+            success: "bg-emerald-500",
+            error: "bg-rose-500",
+            info: "bg-slate-700"
+        };
 
-            const colors = {
-                success: "bg-emerald-500",
-                error: "bg-rose-500",
-                info: "bg-slate-700"
-            };
+        const icons = {
+            success: "✔",
+            error: "✖",
+            info: "ℹ"
+        };
 
-            const toast = document.createElement("div");
-            toast.className = `
-                ${colors[type]}
-                text-white px-4 py-3 rounded-xl shadow-lg
-                animate-fade-in flex items-center gap-2
-                text-sm font-semibold
-            `;
+        const toast = document.createElement("div");
 
-            toast.innerHTML = `<span>${icons[type]}</span> <span>${message}</span>`;
+        toast.className = `
+            ${colors[type]}
+            text-white px-6 py-4 rounded-2xl shadow-2xl
+            flex items-center gap-3
+            text-sm font-bold
+            animate-pop
+            pointer-events-auto
+            min-w-[240px]
+            justify-center
+        `;
 
-            container.appendChild(toast);
+        toast.innerHTML = `
+            <span class="text-lg">${icons[type]}</span>
+            <span>${message}</span>
+        `;
 
-            setTimeout(() => {
-                toast.style.opacity = "0";
-                toast.style.transform = "translateX(20px)";
-                toast.style.transition = "all 0.3s ease";
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
-}   
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "scale(0.9)";
+            toast.style.transition = "all 0.25s ease";
+            setTimeout(() => toast.remove(), 250);
+        }, 1800);
+}
+
 
         function cetakPDFSingle() {
             const tbody = document.getElementById('pdf-single-tbody');
@@ -1003,6 +1026,6 @@
   </div>
 </div>
     <!-- TOAST CONTAINER -->
-    <div id="toast-container" class="fixed top-4 right-4 z-[99999] space-y-2"></div>    
+    <div id="toast-container" class="fixed inset-0 z-[99999] flex items-center justify-center pointer-events-none"></div>  
 </body>
 </html>
